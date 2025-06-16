@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.2
 
 require (
-	github.com/cloudevents/sdk-go/v2 v2.15.0
+	github.com/cloudevents/sdk-go/v2 v2.16.1
 	github.com/eclipse-xfsc/cloud-event-provider v0.1.5
 	github.com/eclipse-xfsc/microservice-core-go v1.1.0
 	github.com/eclipse-xfsc/nats-message-library v1.1.13
@@ -17,7 +17,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.20.1
 	golang.org/x/oauth2 v0.15.0
-	golang.org/x/sync v0.13.0
+	golang.org/x/sync v0.15.0
 )
 
 require (
