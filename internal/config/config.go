@@ -20,14 +20,17 @@ type preAuthBridgeConfiguration struct {
 	OfferTopic      string          `mapstructure:"offerTopic"`
 	TwoFactorTopic  string          `mapstructure:"twoFactorTopic"`
 	OAuth           struct {
-		ServerUrl    string `mapstructure:"serverUrl" envconfig:"SERVERURL"`
-		ClientId     string `mapstructure:"clientId" envconfig:"CLIENTID"`
-		ClientSecret string `mapstructure:"clientSecret" envconfig:"CLIENT_SECRET"`
+		SignerTopic        string `envconfig:"SIGNER_TOPIC"`
+		CredentialEndpoint string `envconfig:"CREDENTIALENDPOINT"`
+		Key                string `envconfig:"KEY"`
+		Issuer             string `envconfig:"ISSUER"`
 	} `mapstructure:"oAuth" envconfig:"OAUTH"`
+	//will be serialized to openid-configuration
 	WellKnown struct {
 		Issuer              string   `mapstructure:"issuer" json:"issuer"`
 		TokenEndpoint       string   `mapstructure:"token_endpoint" json:"token_endpoint"`
 		GrantTypesSupported []string `mapstructure:"grant_types_supported" json:"grant_types_supported"`
+		Jwks                string   `envconfig:"JWKS" json:"jwks_uri"`
 	} `mapstructure:"wellKnown"`
 }
 

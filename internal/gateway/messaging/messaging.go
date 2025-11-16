@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cloudevents/sdk-go/v2/event"
-	"github.com/eclipse-xfsc/cloud-event-provider"
 	ce "github.com/eclipse-xfsc/cloud-event-provider"
 	ctxPkg "github.com/eclipse-xfsc/microservice-core-go/pkg/ctx"
 	"github.com/eclipse-xfsc/nats-message-library/common"
@@ -169,8 +168,9 @@ func (e EventGateway) validationHandler(ctx context.Context, ev event.Event) (*e
 
 	rep := messaging.ValidateAuthenticationRep{
 		Reply: common.Reply{
-			TenantId:  req.TenantId,
-			RequestId: req.RequestId,
+			TenantId:  auth.TenantId,
+			RequestId: auth.RequestId,
+			GroupId:   auth.GroupId,
 			Error:     nil,
 		},
 		Valid:                     valid,
@@ -184,7 +184,7 @@ func (e EventGateway) validationHandler(ctx context.Context, ev event.Event) (*e
 		return nil, err
 	}
 
-	reply, err := cloudeventprovider.NewEvent(messaging.SourcePreAuthBridge, ev.Type(), jsonRepl)
+	reply, err := ce.NewEvent(messaging.SourcePreAuthBridge, ev.Type(), jsonRepl)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +210,7 @@ func (e EventGateway) GenerateAuthorizationHandler(ctx context.Context, event ev
 		nonce, _ = e.authHandler.GenerateCode()
 	}
 
-	newAuth, err := e.authHandler.Generate(ctx, req.TwoFactor.Enabled, ttl, nonce, req.CredentialIdentifier, req.CredentialConfigurationId)
+	newAuth, err := e.authHandler.Generate(ctx, req.Request, req.TwoFactor.Enabled, ttl, nonce, req.CredentialIdentifier, req.CredentialConfigurationId)
 	if err != nil {
 		err = fmt.Errorf("error occured while generate new authentication: %w", err)
 		log.Error(err, "failed to generate new auth")
@@ -221,8 +221,10 @@ func (e EventGateway) GenerateAuthorizationHandler(ctx context.Context, event ev
 		Reply: common.Reply{
 			TenantId:  req.TenantId,
 			RequestId: req.RequestId,
+			GroupId:   req.GroupId,
 		},
-		Authentication: &messaging.Authentication{
+		Authentication: messaging.Authentication{
+			Request:                   req.Request,
 			Code:                      newAuth.Code,
 			Nonce:                     nonce,
 			CredentialConfigurationId: req.CredentialConfigurationId,

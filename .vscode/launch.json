@@ -9,9 +9,19 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${fileDirname}",
+            "program": "${workspaceFolder}/main.go",
             "env": {
-                "PREAUTHBRIDGE_NATS_URL":"bla"
+                "PREAUTHBRIDGE_NATS_URL": "nats://localhost:4222",
+                "PREAUTHBRIDGE_LISTEN_ADDR": "0.0.0.0",
+                "PREAUTHBRIDGE_LISTEN_PORT": "8080",
+                "PREAUTHBRIDGE_REDIS_HOSTS": "localhost:6379",
+                "PREAUTHBRIDGE_OAUTH_SIGNER_TOPIC": "signer-topic",
+                "PREAUTHBRIDGE_OAUTH_CREDENTIALENDPOINT": "test",
+                "PREAUTHBRIDGE_OAUTH_KEY": "eckey",
+                "PREAUTHBRIDGE_REDIS_PASSWORD": "r7fOGyA5Ve",
+                "PREAUTHBRIDGE_OAUTH_ISSUER": "did:web:xxxx#eckey",
+                "PREAUTHBRIDGE_WELLKNOWN_JWKS": "http://...",
+
             }
         }
     ]

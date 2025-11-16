@@ -30,10 +30,11 @@ type TwoFactor struct {
 
 type GenerateAuthorizationRep struct {
 	common.Reply
-	*Authentication
+	Authentication
 }
 
 type Authentication struct {
+	common.Request
 	Token                     string             `json:"token"`
 	Code                      string             `json:"code"`
 	Nonce                     string             `json:"nonce"`

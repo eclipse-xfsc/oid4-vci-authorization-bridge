@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.9"
 
 services:
   nats:
@@ -7,6 +7,8 @@ services:
     ports:
       - '4222:4222' # NATS server port
       - '8222:8222' # NATS server monitoring port
+    networks:
+      - internal
   redis:
     image: redis:6.2-alpine
     restart: always
@@ -15,66 +17,58 @@ services:
     command: redis-server --save 20 1 --loglevel warning --requirepass r7fOGyA5Ve
     volumes:
       - redis:/data
-  hydra:
-    image: oryd/hydra:v2.2.0-rc.3
-    ports:
-      - "4444:4444" # Public port
-      - "4445:4445" # Admin port
-      - "5555:5555" # Port for hydra token user
-    command: serve -c /etc/config/hydra/hydra.yml all --dev
-    volumes:
-      - type: volume
-        source: hydra-sqlite
-        target: /var/lib/sqlite
-        read_only: false
-      - type: bind
-        source: ./
-        target: /etc/config/hydra
-    environment:
-      - DSN=postgres://hydra:secret@postgresd:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
-    restart: unless-stopped
+    networks:
+      - internal
+  signer:
+    image: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/tsa/signer:main
+    networks:
+      - internal
     depends_on:
-      - hydra-migrate
-    networks:
-      - intranet
-  hydra-migrate:
-    image: oryd/hydra:v2.2.0-rc.3
+      - nats
     environment:
-      - DSN=postgres://hydra:secret@postgresd:5432/hydra?sslmode=disable&max_conns=20&max_idle_conns=4
-    command: migrate -c /etc/config/hydra/hydra.yml sql -e --yes
-    volumes:
-      - type: volume
-        source: hydra-sqlite
-        target: /var/lib/sqlite
-        read_only: false
-      - type: bind
-        source: ./
-        target: /etc/config/hydra
-    restart: on-failure
-    networks:
-      - intranet
-  consent:
-    environment:
-      - HYDRA_ADMIN_URL=http://hydra:4445
-    image: oryd/hydra-login-consent-node:v2.2.0-rc.3
+        SDJWT_SERVICE_URL: http://sdjwt:3000
+        VAULT_ADRESS: http://vault:8200
+        VAULT_TOKEN: test
+        NATS_HOST: nats://nats:4222
+        NATS_TOPIC: signer-topic
+        NATS_STATUS_TOPIC: status.data.create
+        NATS_STATUS_VERIFY_TOPIC: status.data.verify
+        CLOUDEVENTPROVIDER_MESSAGING_PROTOCOL: nats
+        CLOUDEVENTPROVIDER_MESSAGING_NATS_URL: nats://nats:4222
+        ENGINE_PATH: /opt/plugins/hashicorp-vault-provider.so
+  vault:
+    image: hashicorp/vault
     ports:
-      - "3000:3000"
-    restart: unless-stopped
+      - 8200:8200
     networks:
-      - intranet
-  postgresd:
-    image: postgres:11.8
-    ports:
-      - "5432:5432"
+      - internal
+      
     environment:
-      - POSTGRES_USER=hydra
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=hydra
-    networks:
-      - intranet
+      - VAULT_DEV_ROOT_TOKEN_ID=test
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'VAULT_ADDR=http://vault:8200 vault status'"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # vault-init:
+  #   # to create a new key // curl --header "X-Vault-Token: test" --request POST --data @keyConfig.json http://localhost:8200/v1/tenant_space/keys/signerkey
+  #   # retrieve a key backup and save it to signerkey.json // curl --header "X-Vault-Token: test" --request GET  http://localhost:8200/v1/tenant_space/backup/signerkey
+  #   image: curlimages/curl:latest
+  #   user: root
+  #   depends_on:
+  #     vault:
+  #       condition: service_healthy
+  #   networks:
+  #     - internal
+  #   volumes:
+  #     - ./scripts/vault/init-keys.sh:/vault-scripts/init-keys.sh
+  #     - ./scripts/vault/signerkey.json:/vault-scripts/signerkey.json
+  #   command: ["/vault-scripts/init-keys.sh"]
+
 networks:
-  intranet:
+  internal:
 volumes:
-  hydra-sqlite:
   redis:
     driver: local

@@ -71,18 +71,20 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "authentication expired")
 	}
 
-	newToken, err := token.New(context.Background())
-	if err != nil {
+	exp := storedAuth.ExpiresAt.Sub(time.Now()).Milliseconds() / 1000
+
+	newToken, err := token.New(context.Background(), exp, storedAuth)
+	if err != nil || newToken == "" {
 		log.Errorf("error occured while retrieving token from authentication server: %v", err)
 		return fiber.NewError(fiber.StatusInternalServerError, "could not retrieve token from authentication server")
 	}
 
 	ttl := time.Duration(config.CurrentPreAuthBridgeConfig.DefaultTtlInMin) * time.Minute
 
-	storedAuth.Token = newToken.AccessToken
+	storedAuth.Token = newToken
 	storedAuth.ExpiresAt = time.Now().Add(ttl)
 
-	if err := a.authHandler.StoreAuth(c.Context(), newToken.AccessToken, *storedAuth); err != nil {
+	if err := a.authHandler.StoreAuth(c.Context(), newToken, *storedAuth); err != nil {
 		log.Errorf("failed to store updated auth to db: %v", err)
 		return fiber.NewError(fiber.StatusInternalServerError, "failed to process request")
 	}
@@ -93,11 +95,11 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 	}
 
 	tokenResp := oauth.Token{
-		AccessToken:     newToken.AccessToken,
-		TokenType:       newToken.TokenType,
-		ExpiresIn:       newToken.Expiry.Sub(time.Now()).Milliseconds() / 1000,
+		AccessToken:     newToken,
+		TokenType:       "Bearer",
+		ExpiresIn:       exp,
 		CNonce:          storedAuth.Nonce,
-		CNonceExpiresIn: storedAuth.ExpiresAt.Sub(time.Now()).Milliseconds() / 1000,
+		CNonceExpiresIn: exp,
 	}
 
 	if storedAuth.CredentialConfigurationId != "" && storedAuth.CredentialIdentifier != nil {

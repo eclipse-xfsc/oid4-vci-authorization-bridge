@@ -44,11 +44,16 @@ spec:
               value: {{ .Values.config.database.hosts }}
             - name: PREAUTHBRIDGE_NATS_URL
               value: {{ .Values.config.nats.url }}
-            - name: PREAUTHBRIDGE_OAUTH_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: "{{- .Release.Name  }}-oauth"
-                  key: secret
+            - name: PREAUTHBRIDGE_OAUTH_SIGNER_TOPIC
+              value: {{ .Values.config.oAuth.signerTopic }}
+            - name: PREAUTHBRIDGE_OAUTH_CREDENTIALENDPOINT
+              value: {{ .Values.config.oAuth.credentialEndpoint }}
+            - name: PREAUTHBRIDGE_OAUTH_KEY
+              value: {{ .Values.config.oAuth.key }}
+            - name: PREAUTHBRIDGE_OAUTH_ISSUER
+              value: {{ .Values.config.oAuth.issuer }}
+            - name: PREAUTHBRIDGE_WELLKNOWN_JWKS
+              value:  {{ .Values.config.wellKnown.jwks }}
             - name: PREAUTHBRIDGE_REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:

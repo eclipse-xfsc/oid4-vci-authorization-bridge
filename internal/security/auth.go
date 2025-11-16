@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/eclipse-xfsc/nats-message-library/common"
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/pkg/messaging"
 	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/credential"
 
@@ -24,13 +25,14 @@ func NewAuthHandler(dbConnection database.Database) *AuthHandler {
 	return &AuthHandler{db: dbConnection}
 }
 
-func (a *AuthHandler) Generate(ctx context.Context, withPin bool, ttl time.Duration, nonce string, credentialIdentifier []string, credenialConfig string) (*messaging.Authentication, error) {
+func (a *AuthHandler) Generate(ctx context.Context, req common.Request, withPin bool, ttl time.Duration, nonce string, credentialIdentifier []string, credenialConfig string) (*messaging.Authentication, error) {
 	code, err := a.GenerateCode()
 	if err != nil {
 		return nil, fmt.Errorf("error occured while generating new authCode: %w", err)
 	}
 
 	newAuth := messaging.Authentication{
+		Request:                   req,
 		Code:                      code,
 		ExpiresAt:                 time.Now().Add(ttl),
 		Nonce:                     nonce,
