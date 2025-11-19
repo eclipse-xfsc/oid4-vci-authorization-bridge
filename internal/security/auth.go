@@ -25,7 +25,7 @@ func NewAuthHandler(dbConnection database.Database) *AuthHandler {
 	return &AuthHandler{db: dbConnection}
 }
 
-func (a *AuthHandler) Generate(ctx context.Context, req common.Request, withPin bool, ttl time.Duration, nonce string, credential_configurations []messaging.CredentialConfiguration) (*messaging.Authentication, error) {
+func (a *AuthHandler) Generate(ctx context.Context, req common.Request, withPin bool, ttl time.Duration, nonce string, credential_configurations []credential.CredentialConfigurationIdentifier) (*messaging.Authentication, error) {
 	code, err := a.GenerateCode()
 	if err != nil {
 		return nil, fmt.Errorf("error occured while generating new authCode: %w", err)

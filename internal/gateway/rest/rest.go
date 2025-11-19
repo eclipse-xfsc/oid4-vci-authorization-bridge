@@ -12,7 +12,7 @@ import (
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/config"
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/security"
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/token"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
+	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/credential"
 	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/oauth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
@@ -137,7 +137,7 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 		CNonceExpiresIn: exp,
 	}
 
-	var configuration *messaging.CredentialConfiguration
+	var configuration *credential.CredentialConfigurationIdentifier
 	if authorizationDetails != "" {
 		decoded, err := url.QueryUnescape(authorizationDetails)
 		if err != nil {

@@ -14,16 +14,11 @@ const (
 	EventTypeGenerateAuthorization = "auth.authorization.generate"
 )
 
-type CredentialConfiguration struct {
-	Id                   string   `json:"configuration_id"`
-	CredentialIdentifier []string `json:"credential_identifier"`
-}
-
 type GenerateAuthorizationReq struct {
 	common.Request
-	TwoFactor                TwoFactor                 `json:"twoFactor"`
-	CredentialConfigurations []CredentialConfiguration `json:"credential_configurations"`
-	Nonce                    string                    `json:"nonce"`
+	TwoFactor                TwoFactor                                      `json:"twoFactor"`
+	CredentialConfigurations []credential.CredentialConfigurationIdentifier `json:"credential_configurations"`
+	Nonce                    string                                         `json:"nonce"`
 }
 
 type TwoFactor struct {
@@ -39,13 +34,13 @@ type GenerateAuthorizationRep struct {
 
 type Authentication struct {
 	common.Request
-	Token                    string                    `json:"token"`
-	Code                     string                    `json:"code"`
-	Nonce                    string                    `json:"nonce"`
-	Pin                      string                    `json:"pin"`
-	ExpiresAt                time.Time                 `json:"expires_at"`
-	CredentialConfigurations []CredentialConfiguration `json:"credential_configurations"`
-	TxCode                   *credential.TxCode        `json:"tx_code"`
+	Token                    string                                         `json:"token"`
+	Code                     string                                         `json:"code"`
+	Nonce                    string                                         `json:"nonce"`
+	Pin                      string                                         `json:"pin"`
+	ExpiresAt                time.Time                                      `json:"expires_at"`
+	CredentialConfigurations []credential.CredentialConfigurationIdentifier `json:"credential_configurations"`
+	TxCode                   *credential.TxCode                             `json:"tx_code"`
 }
 
 const (
@@ -64,7 +59,7 @@ type ValidateAuthenticationReqParams struct {
 
 type ValidateAuthenticationRep struct {
 	common.Reply
-	Valid                    bool                      `json:"valid"`
-	Nonce                    string                    `json:"nonce"`
-	CredentialConfigurations []CredentialConfiguration `json:"credential_configurations"`
+	Valid                    bool                                           `json:"valid"`
+	Nonce                    string                                         `json:"nonce"`
+	CredentialConfigurations []credential.CredentialConfigurationIdentifier `json:"credential_configurations"`
 }

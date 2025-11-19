@@ -12,10 +12,11 @@ import (
 	"github.com/eclipse-xfsc/nats-message-library/common"
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/config"
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
+	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/credential"
 	"github.com/google/uuid"
 )
 
-func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication, configuration *messaging.CredentialConfiguration) (string, error) {
+func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication, configuration *credential.CredentialConfigurationIdentifier) (string, error) {
 
 	subject := storedAuth.Request.BuildSubject()
 
