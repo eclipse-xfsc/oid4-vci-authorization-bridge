@@ -38,6 +38,7 @@ func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication) (
 	p["iat"] = time.Now().UTC().Unix()
 	p["sub"] = subject
 	p["exp"] = exp
+	p["code"] = storedAuth.Code
 
 	pb, err := json.Marshal(p)
 
@@ -47,7 +48,7 @@ func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication) (
 
 	var ph = make(map[string]interface{})
 	ph["typ"] = "at+jwt"
-	ph["kid"] = config.CurrentPreAuthBridgeConfig.OAuth.Issuer
+	ph["kid"] = config.CurrentPreAuthBridgeConfig.OAuth.IssuerKid
 
 	pbh, err := json.Marshal(ph)
 

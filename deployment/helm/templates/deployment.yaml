@@ -56,8 +56,8 @@ spec:
               value: {{ .Values.config.oAuth.namespace }}
             - name: PREAUTHBRIDGE_OAUTH_GROUPID
               value: {{ .Values.config.oAuth.groupid }}
-            - name: PREAUTHBRIDGE_OAUTH_ISSUER
-              value: {{ .Values.config.oAuth.issuer }}
+            - name: PREAUTHBRIDGE_OAUTH_ISSUER_KID
+              value: {{ .Values.config.oAuth.issuerKid }}
             - name: PREAUTHBRIDGE_WELLKNOWN_JWKS
               value:  {{ .Values.config.wellKnown.jwks }}
             - name: PREAUTHBRIDGE_REDIS_PASSWORD

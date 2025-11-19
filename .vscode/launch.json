@@ -21,7 +21,7 @@
                 "PREAUTHBRIDGE_OAUTH_KEY": "eckey",
                 "PREAUTHBRIDGE_OAUTH_NAMESPACE": "signer",
                 "PREAUTHBRIDGE_REDIS_PASSWORD": "r7fOGyA5Ve",
-                "PREAUTHBRIDGE_OAUTH_ISSUER": "did:web:xxxx#eckey",
+                "PREAUTHBRIDGE_OAUTH_ISSUER_KID": "did:web:xxxx#eckey",
                 "PREAUTHBRIDGE_WELLKNOWN_JWKS": "http://...",
 
             }

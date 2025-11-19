@@ -72,7 +72,7 @@ config:
     key: signKey
     namespace: signer 
     groupid:
-    issuer: "did:web:dddddddddd"
+    issuerKid: "did:web:dddddddddd#xxx"
   wellKnown:
     issuer: http://localhost:8080
     token_endpoint: http://localhost:8080/token
