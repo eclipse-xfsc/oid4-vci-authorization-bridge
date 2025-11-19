@@ -58,8 +58,8 @@ func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication) (
 	payload := map[string]interface{}{
 		"tenant_id":  storedAuth.TenantId,
 		"request_id": uuid.NewString(),
-		"namespace":  storedAuth.TenantId,
-		"group":      storedAuth.GroupId,
+		"namespace":  config.CurrentPreAuthBridgeConfig.OAuth.Namespace,
+		"group":      config.CurrentPreAuthBridgeConfig.OAuth.GroupId,
 		"key":        config.CurrentPreAuthBridgeConfig.OAuth.Key,
 		"payload":    pb,
 		"header":     pbh,

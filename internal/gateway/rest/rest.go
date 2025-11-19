@@ -3,6 +3,8 @@ package rest
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/internal/config"
@@ -27,6 +29,7 @@ func NewRestApi(authHandler security.AuthHandler) API {
 	app := fiber.New()
 	app.Post("/token", api.GetTokenHandler)
 	app.Get("/.well-known/openid-configuration", api.GetWellKnownHandler)
+	app.Get("/.well-known/jwks.json", api.GetJwksHandler)
 	app.Head("/health_check", api.HealthCheckHandler)
 
 	api.fbr = app
@@ -50,6 +53,42 @@ func (a API) HealthCheckHandler(c *fiber.Ctx) error {
 
 func (a API) GetWellKnownHandler(c *fiber.Ctx) error {
 	return c.JSON(config.CurrentPreAuthBridgeConfig.WellKnown)
+}
+
+func (a API) GetJwksHandler(c *fiber.Ctx) error {
+	jwksURL := config.CurrentPreAuthBridgeConfig.OAuth.SignerJwksUrl
+
+	// HTTP Client erstellen
+	req, err := http.NewRequest("GET", jwksURL, nil)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// Header weitergeben
+	req.Header.Set("x-namespace", config.CurrentPreAuthBridgeConfig.OAuth.Namespace)
+	req.Header.Set("x-group", config.CurrentPreAuthBridgeConfig.OAuth.GroupId)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
+			"error": "unable to reach JWKS upstream",
+		})
+	}
+	defer resp.Body.Close()
+
+	// Response Body lesen
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to read JWKS response",
+		})
+	}
+
+	// Upstream-Status übernehmen und JWKS weiterreichen
+	return c.Status(resp.StatusCode).Send(body)
 }
 
 func (a API) GetTokenHandler(c *fiber.Ctx) error {

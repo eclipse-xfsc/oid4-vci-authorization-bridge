@@ -23,6 +23,8 @@ services:
     image: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/tsa/signer:main
     networks:
       - internal
+    ports:
+      - '8888:8080'
     depends_on:
       - nats
     environment:

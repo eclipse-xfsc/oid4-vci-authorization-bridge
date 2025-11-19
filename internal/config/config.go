@@ -21,8 +21,11 @@ type preAuthBridgeConfiguration struct {
 	TwoFactorTopic  string          `mapstructure:"twoFactorTopic"`
 	OAuth           struct {
 		SignerTopic        string `envconfig:"SIGNER_TOPIC"`
+		SignerJwksUrl      string `envconfig:"SIGNER_JWKS_URL"`
 		CredentialEndpoint string `envconfig:"CREDENTIALENDPOINT"`
 		Key                string `envconfig:"KEY"`
+		Namespace          string `envconfig:"NAMESPACE"`
+		GroupId            string `envconfig:"GROUPID"`
 		Issuer             string `envconfig:"ISSUER"`
 	} `mapstructure:"oAuth" envconfig:"OAUTH"`
 	//will be serialized to openid-configuration

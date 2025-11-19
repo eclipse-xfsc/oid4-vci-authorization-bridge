@@ -67,12 +67,15 @@ config:
     IsCluster: false
   oAuth:
     signerTopic: sign
+    signerJwksUrl: http://tsa...
     credentialEndpoint: http://.../credential
     key: signKey
+    namespace: signer 
+    groupid:
     issuer: "did:web:dddddddddd"
   wellKnown:
     issuer: http://localhost:8080
     token_endpoint: http://localhost:8080/token
-    jwks: http://...
+    jwks: http://...  # desired jwks endpoint of signerkey
     grant_types_supported:
       - urn:ietf:params:oauth:grant-type:pre-authorized_code
