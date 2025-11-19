@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/pkg/messaging"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
 
 	ctxPkg "github.com/eclipse-xfsc/microservice-core-go/pkg/ctx"
 	redisPkg "github.com/eclipse-xfsc/microservice-core-go/pkg/db/redis"

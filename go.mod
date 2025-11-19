@@ -1,4 +1,4 @@
-module github.com/eclipse-xfsc/oid4-vci-authorization-bridge
+module github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2
 
 go 1.24.0
 

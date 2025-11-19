@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/eclipse-xfsc/nats-message-library/common"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/pkg/messaging"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
 	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/credential"
 
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/internal/database"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/pkg/generator"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/database"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/generator"
 )
 
 const codeLength = 20
@@ -25,19 +25,18 @@ func NewAuthHandler(dbConnection database.Database) *AuthHandler {
 	return &AuthHandler{db: dbConnection}
 }
 
-func (a *AuthHandler) Generate(ctx context.Context, req common.Request, withPin bool, ttl time.Duration, nonce string, credentialIdentifier []string, credenialConfig string) (*messaging.Authentication, error) {
+func (a *AuthHandler) Generate(ctx context.Context, req common.Request, withPin bool, ttl time.Duration, nonce string, credential_configurations []messaging.CredentialConfiguration) (*messaging.Authentication, error) {
 	code, err := a.GenerateCode()
 	if err != nil {
 		return nil, fmt.Errorf("error occured while generating new authCode: %w", err)
 	}
 
 	newAuth := messaging.Authentication{
-		Request:                   req,
-		Code:                      code,
-		ExpiresAt:                 time.Now().Add(ttl),
-		Nonce:                     nonce,
-		CredentialConfigurationId: credenialConfig,
-		CredentialIdentifier:      credentialIdentifier,
+		Request:                  req,
+		Code:                     code,
+		ExpiresAt:                time.Now().Add(ttl),
+		Nonce:                    nonce,
+		CredentialConfigurations: credential_configurations,
 	}
 
 	var pin string

@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/eclipse-xfsc/cloud-event-provider"
+	cloudeventprovider "github.com/eclipse-xfsc/cloud-event-provider"
 	"github.com/eclipse-xfsc/nats-message-library/common"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/pkg/messaging"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
 	"github.com/google/uuid"
 )
 
@@ -33,8 +33,12 @@ func main() {
 			TwoFactor: messaging.TwoFactor{
 				Enabled: false,
 			},
-			CredentialConfigurationId: "DeveloperCredential",
-			CredentialIdentifier:      []string{"my-identifier"},
+			CredentialConfigurations: []messaging.CredentialConfiguration{
+				messaging.CredentialConfiguration{
+					Id:                   "DeveloperCredential",
+					CredentialIdentifier: []string{"my-identifier"},
+				},
+			},
 		}
 
 		b, _ := json.Marshal(req)

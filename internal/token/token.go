@@ -10,12 +10,12 @@ import (
 	cloudeventprovider "github.com/eclipse-xfsc/cloud-event-provider"
 	crypto "github.com/eclipse-xfsc/crypto-provider-service/pkg/messaging"
 	"github.com/eclipse-xfsc/nats-message-library/common"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/internal/config"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/pkg/messaging"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/config"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
 	"github.com/google/uuid"
 )
 
-func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication) (string, error) {
+func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication, configuration *messaging.CredentialConfiguration) (string, error) {
 
 	subject := storedAuth.Request.BuildSubject()
 
@@ -39,6 +39,10 @@ func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication) (
 	p["sub"] = subject
 	p["exp"] = exp
 	p["code"] = storedAuth.Code
+
+	if configuration != nil {
+		p["credentialConfiguration"] = configuration
+	}
 
 	pb, err := json.Marshal(p)
 

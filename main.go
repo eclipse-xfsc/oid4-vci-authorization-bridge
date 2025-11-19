@@ -10,11 +10,11 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/internal/config"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/internal/database"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/internal/gateway/messaging"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/internal/gateway/rest"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/internal/security"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/config"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/database"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/gateway/messaging"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/gateway/rest"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/security"
 )
 
 func main() {

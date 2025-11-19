@@ -14,9 +14,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/internal/config"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/internal/security"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/pkg/messaging"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/config"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/security"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
 )
 
 type RecipientType string
@@ -173,10 +173,9 @@ func (e EventGateway) validationHandler(ctx context.Context, ev event.Event) (*e
 			GroupId:   auth.GroupId,
 			Error:     nil,
 		},
-		Valid:                     valid,
-		Nonce:                     nonce,
-		CredentialConfigurationId: &auth.CredentialConfigurationId,
-		CredentialIdentifier:      auth.CredentialIdentifier,
+		Valid:                    valid,
+		Nonce:                    nonce,
+		CredentialConfigurations: auth.CredentialConfigurations,
 	}
 
 	jsonRepl, err := json.Marshal(rep)
@@ -210,7 +209,7 @@ func (e EventGateway) GenerateAuthorizationHandler(ctx context.Context, event ev
 		nonce, _ = e.authHandler.GenerateCode()
 	}
 
-	newAuth, err := e.authHandler.Generate(ctx, req.Request, req.TwoFactor.Enabled, ttl, nonce, req.CredentialIdentifier, req.CredentialConfigurationId)
+	newAuth, err := e.authHandler.Generate(ctx, req.Request, req.TwoFactor.Enabled, ttl, nonce, req.CredentialConfigurations)
 	if err != nil {
 		err = fmt.Errorf("error occured while generate new authentication: %w", err)
 		log.Error(err, "failed to generate new auth")
@@ -224,13 +223,12 @@ func (e EventGateway) GenerateAuthorizationHandler(ctx context.Context, event ev
 			GroupId:   req.GroupId,
 		},
 		Authentication: messaging.Authentication{
-			Request:                   req.Request,
-			Code:                      newAuth.Code,
-			Nonce:                     nonce,
-			CredentialConfigurationId: req.CredentialConfigurationId,
-			CredentialIdentifier:      req.CredentialIdentifier,
-			TxCode:                    newAuth.TxCode,
-			ExpiresAt:                 newAuth.ExpiresAt,
+			Request:                  req.Request,
+			Code:                     newAuth.Code,
+			Nonce:                    nonce,
+			CredentialConfigurations: req.CredentialConfigurations,
+			TxCode:                   newAuth.TxCode,
+			ExpiresAt:                newAuth.ExpiresAt,
 		},
 	}
 	logrus.Info("Code: " + newAuth.Code + " " + newAuth.Pin)

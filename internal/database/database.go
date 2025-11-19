@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/pkg/messaging"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
 )
 
 var ErrKeyNotFound = fmt.Errorf("key not in database")

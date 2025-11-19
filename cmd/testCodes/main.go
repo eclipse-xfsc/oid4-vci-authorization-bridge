@@ -11,6 +11,7 @@ import (
 
 	ce "github.com/eclipse-xfsc/cloud-event-provider"
 	"github.com/eclipse-xfsc/nats-message-library/common"
+	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/credential"
 	"github.com/nats-io/nats.go"
 )
 
@@ -18,19 +19,18 @@ const (
 	natsURL       = "nats://localhost:4222"
 	topicGenerate = "auth.authorization.generate"
 	topicValidate = "auth.authorization.validate"
-	tokenEndpoint = "http://localhost:8080/token"
+	tokenEndpoint = "http://localhost:8081/token"
 )
 
 // Request structs (minimal)
 type GenerateAuthorizationReq struct {
-	TenantId                  string `json:"tenant_Id"`
-	RequestId                 string `json:"request_Id"`
-	GroupId                   string `json:"group_Id"`
-	Nonce                     string `json:"nonce"`
-	Request                   string `json:"request"`
-	CredentialIdentifier      string `json:"credentialIdentifier"`
-	CredentialConfigurationId string `json:"credentialConfigurationId"`
-	TwoFactor                 struct {
+	TenantId                 string                    `json:"tenant_Id"`
+	RequestId                string                    `json:"request_Id"`
+	GroupId                  string                    `json:"group_Id"`
+	Nonce                    string                    `json:"nonce"`
+	Request                  string                    `json:"request"`
+	CredentialConfigurations []CredentialConfiguration `json:"credential_configurations"`
+	TwoFactor                struct {
 		Enabled          bool   `json:"enabled"`
 		RecipientType    string `json:"recipientType"`
 		RecipientAddress string `json:"recipientAddress"`
@@ -42,15 +42,20 @@ type GenerateAuthorizationRep struct {
 	Authentication
 }
 
+type CredentialConfiguration struct {
+	Id                   string   `json:"configuration_id"`
+	CredentialIdentifier []string `json:"credential_identifier"`
+}
+
 type Authentication struct {
 	common.Request
-	Token                     string    `json:"token"`
-	Code                      string    `json:"code"`
-	Nonce                     string    `json:"nonce"`
-	Pin                       string    `json:"pin"`
-	ExpiresAt                 time.Time `json:"expires_at"`
-	CredentialConfigurationId string    `json:"credential_configuration_id"`
-	CredentialIdentifier      []string  `json:"credential_identifier"`
+	Token                    string                    `json:"token"`
+	Code                     string                    `json:"code"`
+	Nonce                    string                    `json:"nonce"`
+	Pin                      string                    `json:"pin"`
+	ExpiresAt                time.Time                 `json:"expires_at"`
+	CredentialConfigurations []CredentialConfiguration `json:"credential_configurations"`
+	TxCode                   *credential.TxCode        `json:"tx_code"`
 }
 
 type ValidateAuthenticationReq struct {
@@ -72,11 +77,17 @@ func main() {
 	fmt.Println("📨 requesting authorization code via NATS...")
 
 	genReq := GenerateAuthorizationReq{
-		TenantId:                  "tenant_space",
-		RequestId:                 "req-001",
-		Request:                   "sample-oauth-request",
-		CredentialIdentifier:      "cred-abc",
-		CredentialConfigurationId: "conf-123",
+		TenantId:  "tenant_space",
+		RequestId: "req-001",
+		Request:   "sample-oauth-request",
+		CredentialConfigurations: []CredentialConfiguration{
+			CredentialConfiguration{
+				Id: "conf-123",
+				CredentialIdentifier: []string{
+					"cred-abc",
+				},
+			},
+		},
 	}
 	genReq.TwoFactor.Enabled = false // simplify demo
 
