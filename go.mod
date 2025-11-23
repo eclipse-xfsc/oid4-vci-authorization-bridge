@@ -10,7 +10,7 @@ require (
 	github.com/eclipse-xfsc/crypto-provider-service v1.1.6
 	github.com/eclipse-xfsc/microservice-core-go v1.1.0
 	github.com/eclipse-xfsc/nats-message-library v1.3.0
-	github.com/eclipse-xfsc/oid4-vci-vp-library v1.6.2
+	github.com/eclipse-xfsc/oid4-vci-vp-library v1.6.4
 	github.com/gofiber/fiber/v2 v2.52.2
 	github.com/google/uuid v1.6.0
 	github.com/kelseyhightower/envconfig v1.4.0

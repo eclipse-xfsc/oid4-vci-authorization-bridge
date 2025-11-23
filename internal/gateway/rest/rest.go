@@ -177,6 +177,7 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 			Type:                      "openid_credential",
 			CredentialConfigurationID: details.CredentialConfigurationID,
 			CredentialIdentifiers:     details.CredentialIdentifiers,
+			Claims:                    details.Claims,
 		}
 
 		configuration = &storedAuth.CredentialConfigurations[index]
@@ -187,6 +188,7 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 				Type:                      "openid_credential",
 				CredentialConfigurationID: storedAuth.CredentialConfigurations[0].Id,
 				CredentialIdentifiers:     storedAuth.CredentialConfigurations[0].CredentialIdentifier,
+				Claims:                    storedAuth.Claims,
 			}
 			configuration = &storedAuth.CredentialConfigurations[0]
 		}

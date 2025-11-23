@@ -5,6 +5,7 @@ import (
 
 	"github.com/eclipse-xfsc/nats-message-library/common"
 	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/credential"
+	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/oauth"
 )
 
 const SourcePreAuthBridge = "preauthbridge"
@@ -19,6 +20,7 @@ type GenerateAuthorizationReq struct {
 	TwoFactor                TwoFactor                                      `json:"twoFactor"`
 	CredentialConfigurations []credential.CredentialConfigurationIdentifier `json:"credential_configurations"`
 	Nonce                    string                                         `json:"nonce"`
+	Claims                   []oauth.Claim                                  `json:"claims"`
 }
 
 type TwoFactor struct {
@@ -41,6 +43,7 @@ type Authentication struct {
 	ExpiresAt                time.Time                                      `json:"expires_at"`
 	CredentialConfigurations []credential.CredentialConfigurationIdentifier `json:"credential_configurations"`
 	TxCode                   *credential.TxCode                             `json:"tx_code"`
+	Claims                   []oauth.Claim                                  `json:"claims"`
 }
 
 const (

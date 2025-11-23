@@ -209,7 +209,7 @@ func (e EventGateway) GenerateAuthorizationHandler(ctx context.Context, event ev
 		nonce, _ = e.authHandler.GenerateCode()
 	}
 
-	newAuth, err := e.authHandler.Generate(ctx, req.Request, req.TwoFactor.Enabled, ttl, nonce, req.CredentialConfigurations)
+	newAuth, err := e.authHandler.Generate(ctx, req.Request, req.TwoFactor.Enabled, ttl, nonce, req.CredentialConfigurations, req.Claims)
 	if err != nil {
 		err = fmt.Errorf("error occured while generate new authentication: %w", err)
 		log.Error(err, "failed to generate new auth")
@@ -229,6 +229,7 @@ func (e EventGateway) GenerateAuthorizationHandler(ctx context.Context, event ev
 			CredentialConfigurations: req.CredentialConfigurations,
 			TxCode:                   newAuth.TxCode,
 			ExpiresAt:                newAuth.ExpiresAt,
+			Claims:                   newAuth.Claims,
 		},
 	}
 	logrus.Info("Code: " + newAuth.Code + " " + newAuth.Pin)

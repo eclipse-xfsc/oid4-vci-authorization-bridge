@@ -62,6 +62,10 @@ github.com/eclipse-xfsc/oid4-vci-vp-library v1.5.0 h1:wq+jzuXbAILEeksYUqLCYJpM8p
 github.com/eclipse-xfsc/oid4-vci-vp-library v1.5.0/go.mod h1:0SLW2+MoLNnK0XaUGJlWxrzQbkWVDLHwxKALqm3LPCk=
 github.com/eclipse-xfsc/oid4-vci-vp-library v1.6.2 h1:mulhLTNIEYAjb6zMfPTnD7tqL8+q9hO8smVhTAZz0k4=
 github.com/eclipse-xfsc/oid4-vci-vp-library v1.6.2/go.mod h1:0SLW2+MoLNnK0XaUGJlWxrzQbkWVDLHwxKALqm3LPCk=
+github.com/eclipse-xfsc/oid4-vci-vp-library v1.6.3 h1:tqVJizh39Da71ryv383pDaM1aRjZIq81VSxqU10hR34=
+github.com/eclipse-xfsc/oid4-vci-vp-library v1.6.3/go.mod h1:0SLW2+MoLNnK0XaUGJlWxrzQbkWVDLHwxKALqm3LPCk=
+github.com/eclipse-xfsc/oid4-vci-vp-library v1.6.4 h1:ralSQuPKDKlAuEEe3ta0gNTFskv1wg+gLIxLyX034ps=
+github.com/eclipse-xfsc/oid4-vci-vp-library v1.6.4/go.mod h1:0SLW2+MoLNnK0XaUGJlWxrzQbkWVDLHwxKALqm3LPCk=
 github.com/eclipse-xfsc/ssi-jwt/v2 v2.1.0 h1:KAb44AhD0edbS7fSnhfoGGZ74tq8Reoxg8Ho4iRneFs=
 github.com/eclipse-xfsc/ssi-jwt/v2 v2.1.0/go.mod h1:khHnKzfetIhmx03jdflVJdv2K8odvHUBtKjlVXm3ndA=
 github.com/eclipse/paho.golang v0.12.0 h1:EXQFJbJklDnUqW6lyAknMWRhM2NgpHxwrrL8riUmp3Q=

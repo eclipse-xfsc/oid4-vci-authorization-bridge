@@ -9,6 +9,7 @@ import (
 	"github.com/eclipse-xfsc/nats-message-library/common"
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
 	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/credential"
+	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/oauth"
 
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/database"
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/generator"
@@ -25,7 +26,7 @@ func NewAuthHandler(dbConnection database.Database) *AuthHandler {
 	return &AuthHandler{db: dbConnection}
 }
 
-func (a *AuthHandler) Generate(ctx context.Context, req common.Request, withPin bool, ttl time.Duration, nonce string, credential_configurations []credential.CredentialConfigurationIdentifier) (*messaging.Authentication, error) {
+func (a *AuthHandler) Generate(ctx context.Context, req common.Request, withPin bool, ttl time.Duration, nonce string, credential_configurations []credential.CredentialConfigurationIdentifier, claims []oauth.Claim) (*messaging.Authentication, error) {
 	code, err := a.GenerateCode()
 	if err != nil {
 		return nil, fmt.Errorf("error occured while generating new authCode: %w", err)
@@ -37,6 +38,7 @@ func (a *AuthHandler) Generate(ctx context.Context, req common.Request, withPin 
 		ExpiresAt:                time.Now().Add(ttl),
 		Nonce:                    nonce,
 		CredentialConfigurations: credential_configurations,
+		Claims:                   claims,
 	}
 
 	var pin string
