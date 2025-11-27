@@ -128,13 +128,13 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(InvalidErrorResponse)
 	}
 
-	exp := storedAuth.ExpiresAt.Sub(time.Now()).Milliseconds() / 1000
+	exp := storedAuth.ExpiresAt.Sub(time.Now())
 
 	tokenResp := oauth.Token{
 		TokenType:       "Bearer",
-		ExpiresIn:       exp,
+		ExpiresIn:       int64(exp.Seconds()),
 		CNonce:          storedAuth.Nonce,
-		CNonceExpiresIn: exp,
+		CNonceExpiresIn: int64(exp.Seconds()),
 	}
 
 	var configuration *credential.CredentialConfigurationIdentifier
@@ -195,7 +195,7 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 
 	}
 
-	newToken, err := token.New(context.Background(), exp, storedAuth, configuration)
+	newToken, err := token.New(context.Background(), storedAuth.ExpiresAt.Unix(), storedAuth, configuration)
 	if err != nil || newToken == "" {
 		logrus.Errorf("error occured while retrieving token from authentication server: %v", err)
 		logrus.Error(fiber.NewError(fiber.StatusInternalServerError, "could not retrieve token from authentication server"))
