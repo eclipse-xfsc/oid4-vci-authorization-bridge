@@ -183,13 +183,12 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 		configuration = &storedAuth.CredentialConfigurations[index]
 
 	} else {
+		// Wallet did not send authorization_details in the token request (normal
+		// for the pre-authorized code grant — the wallet uses credential_configuration_ids
+		// from the offer instead). Do not inject authorization_details into the
+		// response; sending it unsolicited (potentially with an empty identifier
+		// list) causes wallets to reject the response or fail on it.
 		if len(storedAuth.CredentialConfigurations) == 1 {
-			tokenResp.AuthorizationDetails = &oauth.AuthorizationDetails{
-				Type:                      "openid_credential",
-				CredentialConfigurationID: storedAuth.CredentialConfigurations[0].Id,
-				CredentialIdentifiers:     storedAuth.CredentialConfigurations[0].CredentialIdentifier,
-				Claims:                    storedAuth.Claims,
-			}
 			configuration = &storedAuth.CredentialConfigurations[0]
 		}
 
