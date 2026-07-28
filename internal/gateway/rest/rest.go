@@ -55,7 +55,20 @@ func (a API) HealthCheckHandler(c *fiber.Ctx) error {
 }
 
 func (a API) GetWellKnownHandler(c *fiber.Ctx) error {
-	return c.JSON(config.CurrentPreAuthBridgeConfig.WellKnown)
+	wellKnown := config.CurrentPreAuthBridgeConfig.WellKnown
+	if value := c.Get("x-issuer"); value != "" {
+		wellKnown.Issuer = value
+	}
+
+	if value := c.Get("x-jwksurl"); value != "" {
+		wellKnown.Jwks = value
+	}
+
+	if value := c.Get("x-tokenendpoint"); value != "" {
+		wellKnown.TokenEndpoint = value
+	}
+
+	return c.JSON(wellKnown)
 }
 
 func (a API) GetJwksHandler(c *fiber.Ctx) error {
@@ -69,9 +82,24 @@ func (a API) GetJwksHandler(c *fiber.Ctx) error {
 		})
 	}
 
-	// Header weitergeben
-	req.Header.Set("x-namespace", config.CurrentPreAuthBridgeConfig.OAuth.Namespace)
-	req.Header.Set("x-group", config.CurrentPreAuthBridgeConfig.OAuth.GroupId)
+	namespace := config.CurrentPreAuthBridgeConfig.OAuth.Namespace
+	if value := c.Get("x-namespace"); value != "" {
+		namespace = value
+	}
+
+	group := config.CurrentPreAuthBridgeConfig.OAuth.GroupId
+	if value := c.Get("x-group"); value != "" {
+		group = value
+	}
+
+	engine := config.CurrentPreAuthBridgeConfig.OAuth.Engine
+	if value := c.Get("x-engine"); value != "" {
+		engine = value
+	}
+
+	req.Header.Set("x-namespace", namespace)
+	req.Header.Set("x-group", group)
+	req.Header.Set("x-engine", engine)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -98,6 +126,26 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 
 	var InvalidErrorResponse = map[string]string{
 		"error": "invalid_request",
+	}
+
+	namespace := config.CurrentPreAuthBridgeConfig.OAuth.Namespace
+	if value := c.Get("x-namespace"); value != "" {
+		namespace = value
+	}
+
+	group := config.CurrentPreAuthBridgeConfig.OAuth.GroupId
+	if value := c.Get("x-group"); value != "" {
+		group = value
+	}
+
+	key := config.CurrentPreAuthBridgeConfig.OAuth.Key
+	if value := c.Get("x-key"); value != "" {
+		group = value
+	}
+
+	issuerKid := config.CurrentPreAuthBridgeConfig.OAuth.IssuerKid
+	if value := c.Get("x-issuerKid"); value != "" {
+		group = value
 	}
 
 	code := c.FormValue("pre-authorized_code")
@@ -195,7 +243,7 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 
 	}
 
-	newToken, err := token.New(context.Background(), storedAuth.ExpiresAt.Unix(), storedAuth, configuration)
+	newToken, err := token.New(context.Background(), storedAuth.ExpiresAt.Unix(), storedAuth, configuration, namespace, group, key, issuerKid)
 	if err != nil || newToken == "" {
 		logrus.Errorf("error occured while retrieving token from authentication server: %v", err)
 		logrus.Error(fiber.NewError(fiber.StatusInternalServerError, "could not retrieve token from authentication server"))

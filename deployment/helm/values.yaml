@@ -15,7 +15,11 @@ image:
   # -- Image pull secret when internal image is used
   pullSecrets: key
 
-podAnnotations: {}
+podAnnotations:
+    inject.xfsc.io/enabled: "false"
+    inject.xfsc.io/needs: "nats,redis,signer"
+    inject.xfsc.io/env-prefix: "PREAUTHBRIDGE" 
+
 
 resources:
   requests:
@@ -73,6 +77,7 @@ config:
     namespace: signer 
     groupid:
     issuerKid: "did:web:dddddddddd#xxx"
+    engine: transit
   wellKnown:
     issuer: http://localhost:8080
     token_endpoint: http://localhost:8080/token

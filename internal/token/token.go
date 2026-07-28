@@ -16,7 +16,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication, configuration *credential.CredentialConfigurationIdentifier) (string, error) {
+func New(ctx context.Context, exp int64,
+	storedAuth *messaging.Authentication,
+	configuration *credential.CredentialConfigurationIdentifier,
+	namespace, groupId, key, issuerKid string) (string, error) {
 
 	subject := storedAuth.Request.BuildSubject()
 
@@ -53,7 +56,7 @@ func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication, c
 
 	var ph = make(map[string]interface{})
 	ph["typ"] = "at+jwt"
-	ph["kid"] = config.CurrentPreAuthBridgeConfig.OAuth.IssuerKid
+	ph["kid"] = issuerKid
 
 	pbh, err := json.Marshal(ph)
 
@@ -64,9 +67,9 @@ func New(ctx context.Context, exp int64, storedAuth *messaging.Authentication, c
 	payload := map[string]interface{}{
 		"tenant_id":  storedAuth.TenantId,
 		"request_id": uuid.NewString(),
-		"namespace":  config.CurrentPreAuthBridgeConfig.OAuth.Namespace,
-		"group":      config.CurrentPreAuthBridgeConfig.OAuth.GroupId,
-		"key":        config.CurrentPreAuthBridgeConfig.OAuth.Key,
+		"namespace":  namespace,
+		"group":      groupId,
+		"key":        key,
 		"payload":    pb,
 		"header":     pbh,
 	}

@@ -27,6 +27,7 @@ type preAuthBridgeConfiguration struct {
 		Namespace          string `envconfig:"NAMESPACE"`
 		GroupId            string `envconfig:"GROUPID"`
 		IssuerKid          string `envconfig:"ISSUER_KID"`
+		Engine             string `envconfig:"ENGINE"`
 	} `mapstructure:"oAuth" envconfig:"OAUTH"`
 	//will be serialized to openid-configuration
 	WellKnown struct {

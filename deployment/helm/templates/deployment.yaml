@@ -34,26 +34,18 @@ spec:
         image: "{{ .Values.image.repository }}/{{ .Values.image.name }}:{{ default .Chart.AppVersion .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
         env:
-            - name: LOG_LEVEL
-              value: {{ .Values.config.logLevel }}
-            - name: PREAUTHBRIDGE_LISTEN_ADDR
-              value: {{ .Values.server.http.host }}
-            - name: PREAUTHBRIDGE_LISTEN_PORT
-              value: "{{ .Values.server.http.port }}"
-            - name: PREAUTHBRIDGE_REDIS_HOSTS
-              value: {{ .Values.config.database.hosts }}
+{{- if eq (index .Values.podAnnotations "inject.xfsc.io/enabled") "false" }}
             - name: PREAUTHBRIDGE_NATS_URL
               value: {{ .Values.config.nats.url }}
             - name: PREAUTHBRIDGE_NATS_REQUEST_TIMEOUT
               value: {{ .Values.config.nats.timeoutInSec }}
-            - name: PREAUTHBRIDGE_OAUTH_SIGNER_TOPIC
-              value: {{ .Values.config.oAuth.signerTopic }}
-            - name: PREAUTHBRIDGE_OAUTH_SIGNER_JWKS_URL
-              value: {{ .Values.config.oAuth.signerJwksUrl }}
-            - name: PREAUTHBRIDGE_OAUTH_CREDENTIALENDPOINT
-              value: {{ .Values.config.oAuth.credentialEndpoint }}
-            - name: PREAUTHBRIDGE_OAUTH_KEY
-              value: {{ .Values.config.oAuth.key }}
+            - name: PREAUTHBRIDGE_REDIS_HOSTS
+              value: {{ .Values.config.database.hosts }}
+            - name: PREAUTHBRIDGE_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{- .Release.Name  }}-redis"
+                  key: redis-password
             - name: PREAUTHBRIDGE_OAUTH_NAMESPACE
               value: {{ .Values.config.oAuth.namespace }}
             - name: PREAUTHBRIDGE_OAUTH_GROUPID
@@ -62,11 +54,25 @@ spec:
               value: {{ .Values.config.oAuth.issuerKid }}
             - name: PREAUTHBRIDGE_WELLKNOWN_JWKS
               value:  {{ .Values.config.wellKnown.jwks }}
-            - name: PREAUTHBRIDGE_REDIS_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: "{{- .Release.Name  }}-redis"
-                  key: redis-password
+            - name: PREAUTHBRIDGE_OAUTH_SIGNER_JWKS_URL
+              value: {{ .Values.config.oAuth.signerJwksUrl }}
+            - name: PREAUTHBRIDGE_OAUTH_CREDENTIALENDPOINT
+              value: {{ .Values.config.oAuth.credentialEndpoint }}
+            - name: PREAUTHBRIDGE_OAUTH_KEY
+              value: {{ .Values.config.oAuth.key }}
+            - name: PREAUTHBRIDGE_OAUTH_ENGINE
+              value: {{ .Values.config.oAuth.engine }}
+{{- end }}
+            - name: LOG_LEVEL
+              value: {{ .Values.config.logLevel }}
+            - name: PREAUTHBRIDGE_LISTEN_ADDR
+              value: {{ .Values.server.http.host }}
+            - name: PREAUTHBRIDGE_LISTEN_PORT
+              value: "{{ .Values.server.http.port }}"
+            - name: PREAUTHBRIDGE_OAUTH_SIGNER_TOPIC
+              value: {{ .Values.config.oAuth.signerTopic }}
+
+           
       {{- if .Values.resources }}
         resources:
 {{ toYaml .Values.resources | indent 10 }}
