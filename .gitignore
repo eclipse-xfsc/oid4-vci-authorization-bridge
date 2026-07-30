@@ -3,3 +3,5 @@ config.yaml
 *.tgz
 *.lock
 *.exe
+Chart.lock
+deployment/helm/charts
