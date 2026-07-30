@@ -1,0 +1,12 @@
+{{- if eq (index .Values.podAnnotations "inject.xfsc.io/enabled") "true" }}
+apiVersion: xfsc.dev/v1alpha1
+kind: ResourceProvision
+metadata:
+  name: preauthbridge
+spec:
+  type: service
+  outputs:
+    env:
+      OAUTH_SIGNER_TOPIC: {{ .Values.config.oAuth.signerTopic }}
+      
+{{- end }}

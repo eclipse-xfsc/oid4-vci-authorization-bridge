@@ -35,31 +35,54 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
         env:
 {{- if eq (index .Values.podAnnotations "inject.xfsc.io/enabled") "false" }}
+              #injected
             - name: PREAUTHBRIDGE_NATS_URL
               value: {{ .Values.config.nats.url }}
+              #injected
             - name: PREAUTHBRIDGE_NATS_REQUEST_TIMEOUT
               value: {{ .Values.config.nats.timeoutInSec }}
+              #injected
             - name: PREAUTHBRIDGE_REDIS_HOSTS
               value: {{ .Values.config.database.hosts }}
+              #injected
+            - name: PREAUTHBRIDGE_REDIS_ISCLUSTER
+              value: {{ .Values.config.database.iscluster }}
+              #injected
+            - name: PREAUTHBRIDGE_REDIS_DATABASE
+              value: {{ .Values.config.database.db }}
+              #injected
+            - name: PREAUTHBRIDGE_REDIS_USERNAME
+              value: {{ .Values.config.database.username }}
+            - name: PREAUTHBRIDGE_REDIS_PORT
+              value: {{ .Values.config.database.port }}
+              #injected
             - name: PREAUTHBRIDGE_REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: "{{- .Release.Name  }}-redis"
                   key: redis-password
+              #x-namespace
             - name: PREAUTHBRIDGE_OAUTH_NAMESPACE
               value: {{ .Values.config.oAuth.namespace }}
+              #x-group
             - name: PREAUTHBRIDGE_OAUTH_GROUPID
               value: {{ .Values.config.oAuth.groupid }}
+              #x-issuerkid
             - name: PREAUTHBRIDGE_OAUTH_ISSUER_KID
               value: {{ .Values.config.oAuth.issuerKid }}
+              # x-jwksurl
             - name: PREAUTHBRIDGE_WELLKNOWN_JWKS
               value:  {{ .Values.config.wellKnown.jwks }}
+              #injected
             - name: PREAUTHBRIDGE_OAUTH_SIGNER_JWKS_URL
               value: {{ .Values.config.oAuth.signerJwksUrl }}
+              #x-credentialendpoint
             - name: PREAUTHBRIDGE_OAUTH_CREDENTIALENDPOINT
               value: {{ .Values.config.oAuth.credentialEndpoint }}
+              #x-key
             - name: PREAUTHBRIDGE_OAUTH_KEY
               value: {{ .Values.config.oAuth.key }}
+              #x-engine
             - name: PREAUTHBRIDGE_OAUTH_ENGINE
               value: {{ .Values.config.oAuth.engine }}
 {{- end }}

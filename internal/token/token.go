@@ -19,7 +19,7 @@ import (
 func New(ctx context.Context, exp int64,
 	storedAuth *messaging.Authentication,
 	configuration *credential.CredentialConfigurationIdentifier,
-	namespace, groupId, key, issuerKid string) (string, error) {
+	namespace, groupId, key, issuerKid, credentialEndpoint string) (string, error) {
 
 	subject := storedAuth.Request.BuildSubject()
 
@@ -38,7 +38,7 @@ func New(ctx context.Context, exp int64,
 
 	var p = make(map[string]interface{})
 	p["nonce"] = storedAuth.Nonce
-	p["aud"] = config.CurrentPreAuthBridgeConfig.OAuth.CredentialEndpoint
+	p["aud"] = credentialEndpoint
 	p["iat"] = time.Now().UTC().Unix()
 	p["sub"] = subject
 	p["exp"] = exp

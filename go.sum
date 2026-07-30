@@ -56,6 +56,8 @@ github.com/eclipse-xfsc/did-core/v2 v2.1.0 h1:56fifKCHqw2WrCxBC3PERRh0Qqv+rd9gg+
 github.com/eclipse-xfsc/did-core/v2 v2.1.0/go.mod h1:JvGH0Au3l53zPJ4ear8OOVuInjeJ/G+olYyLQAj5g/c=
 github.com/eclipse-xfsc/microservice-core-go v1.1.0 h1:Uyhk64iNiRELS6vjPNZfGKCvRUdpQp39n2oUKS4LBKM=
 github.com/eclipse-xfsc/microservice-core-go v1.1.0/go.mod h1:pMkUXQ6E3XLPzYhdHCwMEWx/as6QCaLdQguIFDbORlI=
+github.com/eclipse-xfsc/microservice-core-go v1.1.2 h1:B4Svh4+CzH4k67BSnT3tUnS84VX74VQk+S4OWOWRCuU=
+github.com/eclipse-xfsc/microservice-core-go v1.1.2/go.mod h1:YRLyt66TYC1Km40w6oagYrXjrMCyI1tym2wGEgWQ9pI=
 github.com/eclipse-xfsc/nats-message-library v1.3.0 h1:TdzYXrC9rNTQDtsG5ARwzgGYs5kKLkv1zCHftCx1HM4=
 github.com/eclipse-xfsc/nats-message-library v1.3.0/go.mod h1:N72jhbp5/e+M4Ye+SfKtmN2OT3f31c5sA5AWa2NXuuo=
 github.com/eclipse-xfsc/oid4-vci-vp-library v1.5.0 h1:wq+jzuXbAILEeksYUqLCYJpM8p5F2aZIjKc1g5VU6wQ=
@@ -86,6 +88,8 @@ github.com/gin-gonic/gin v1.10.0 h1:nTuyha1TYqgedzytsKYqna+DfLos46nTv2ygFy86HFU=
 github.com/gin-gonic/gin v1.10.0/go.mod h1:4PMNQiOhvDRa013RKVbsiNwoyezlm2rm0uX/T7kzp5Y=
 github.com/go-logr/logr v1.4.2 h1:6pFjapn8bFcIbiKo3XT4j/BhANplGihG6tvd+8rYgrY=
 github.com/go-logr/logr v1.4.2/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
+github.com/go-logr/logr v1.4.3 h1:CjnDlHq8ikf6E492q6eKboGOC0T8CDaOvkHCIg8idEI=
+github.com/go-logr/logr v1.4.3/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
 github.com/go-logr/zapr v1.3.0 h1:XGdV8XW8zdwFiwOA2Dryh1gj2KRQyOOoNmBy4EplIcQ=
 github.com/go-logr/zapr v1.3.0/go.mod h1:YKepepNBd1u/oyhd/yQmtjVXmm9uML4IXUgMOwR8/Gg=
 github.com/go-openapi/jsonpointer v0.21.1 h1:whnzv/pNXtK2FbX/W9yJfRmE2gsmkfahjMKB0fZvcic=

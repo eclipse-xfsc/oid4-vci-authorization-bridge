@@ -1,0 +1,21 @@
+{{- if eq (index .Values.podAnnotations "inject.xfsc.io/enabled") "false" }}
+apiVersion: resources.xfsc.io/v1alpha1
+kind: ResourceClaim
+metadata:
+  name: {{ .Release.Name }}-redis
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: redis
+
+  providerRef:
+    name: "{{ .Values.redis.provider | quote }}"
+
+  secretRef:
+    name: {{ .Release.Name }}-redis-credentials
+
+  parameters:
+    database: {{ .Values.config.database.db | default 0 }}
+    acl:
+      keys:
+        - "{{ .Release.Name }}:*"
+{{- end }}

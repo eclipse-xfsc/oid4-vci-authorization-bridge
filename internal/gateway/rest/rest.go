@@ -140,12 +140,17 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 
 	key := config.CurrentPreAuthBridgeConfig.OAuth.Key
 	if value := c.Get("x-key"); value != "" {
-		group = value
+		key = value
 	}
 
 	issuerKid := config.CurrentPreAuthBridgeConfig.OAuth.IssuerKid
 	if value := c.Get("x-issuerKid"); value != "" {
-		group = value
+		issuerKid = value
+	}
+
+	credentialEndpoint := config.CurrentPreAuthBridgeConfig.OAuth.CredentialEndpoint
+	if value := c.Get("x-credentialendpoint"); value != "" {
+		credentialEndpoint = value
 	}
 
 	code := c.FormValue("pre-authorized_code")
@@ -243,7 +248,11 @@ func (a API) GetTokenHandler(c *fiber.Ctx) error {
 
 	}
 
-	newToken, err := token.New(context.Background(), storedAuth.ExpiresAt.Unix(), storedAuth, configuration, namespace, group, key, issuerKid)
+	newToken, err := token.New(context.Background(),
+		storedAuth.ExpiresAt.Unix(),
+		storedAuth,
+		configuration,
+		namespace, group, key, issuerKid, credentialEndpoint)
 	if err != nil || newToken == "" {
 		logrus.Errorf("error occured while retrieving token from authentication server: %v", err)
 		logrus.Error(fiber.NewError(fiber.StatusInternalServerError, "could not retrieve token from authentication server"))
