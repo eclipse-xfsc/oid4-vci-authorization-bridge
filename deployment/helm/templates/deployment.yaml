@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "{{ .Chart.Name }}"
+  name: {{ .Chart.Name | quote }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: "{{ .Chart.Name }}"
+    app: {{ .Chart.Name | quote }}
 spec:
   replicas: {{ .Values.replicaCount }}
   strategy:
@@ -14,97 +14,124 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: "{{ .Chart.Name }}"
+      app: {{ .Chart.Name | quote }}
   template:
     metadata:
       labels:
-        app: "{{ .Chart.Name }}"
-{{- if .Values.podAnnotations }}
+        app: {{ .Chart.Name | quote }}
+      {{- with .Values.podAnnotations }}
       annotations:
-        {{ toYaml .Values.podAnnotations | indent 8 }}
-{{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
-      serviceAccountName: {{ .Values.serviceAccountName }}
-{{- if .Values.image.pullSecrets }}
+      serviceAccountName: {{ .Values.serviceAccountName | quote }}
+
+      {{- with .Values.image.pullSecrets }}
       imagePullSecrets:
-        - name: {{ .Values.image.pullSecrets }}
-{{- end }}
+        - name: {{ . | quote }}
+      {{- end }}
+
       containers:
-      - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}/{{ .Values.image.name }}:{{ default .Chart.AppVersion .Values.image.tag }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
-        env:
-{{- if eq (index .Values.podAnnotations "inject.xfsc.io/enabled") "false" }}
-              #injected
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}/{{ .Values.image.name }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+
+          env:
+            {{- if eq (get (default dict .Values.podAnnotations) "inject.xfsc.io/enabled") "false" }}
+            # injected
             - name: PREAUTHBRIDGE_NATS_URL
-              value: {{ .Values.config.nats.url }}
-              #injected
+              value: {{ .Values.config.nats.url | quote }}
+
+            # injected
             - name: PREAUTHBRIDGE_NATS_REQUEST_TIMEOUT
-              value: {{ .Values.config.nats.timeoutInSec }}
-              #injected
+              value: {{ .Values.config.nats.timeoutInSec | quote }}
+
+            # injected
             - name: PREAUTHBRIDGE_REDIS_HOSTS
-              value: {{ .Values.config.database.hosts }}
-              #injected
+              value: {{ .Values.config.database.hosts | quote }}
+
+            # injected
             - name: PREAUTHBRIDGE_REDIS_ISCLUSTER
-              value: {{ .Values.config.database.iscluster }}
-              #injected
+              value: {{ .Values.config.database.iscluster | quote }}
+
+            # injected
             - name: PREAUTHBRIDGE_REDIS_DATABASE
-              value: {{ .Values.config.database.db }}
-              #injected
+              value: {{ .Values.config.database.db | quote }}
+
+            # injected
             - name: PREAUTHBRIDGE_REDIS_USERNAME
-              value: {{ .Values.config.database.username }}
+              value: {{ .Values.config.database.username | quote }}
+
+            # injected
             - name: PREAUTHBRIDGE_REDIS_PORT
-              value: {{ .Values.config.database.port }}
-              #injected
+              value: {{ .Values.config.database.port | quote }}
+
+            # injected
             - name: PREAUTHBRIDGE_REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{- .Release.Name  }}-redis"
+                  name: "{{ .Release.Name }}-redis"
                   key: redis-password
-              #x-namespace
-            - name: PREAUTHBRIDGE_OAUTH_NAMESPACE
-              value: {{ .Values.config.oAuth.namespace }}
-              #x-group
-            - name: PREAUTHBRIDGE_OAUTH_GROUPID
-              value: {{ .Values.config.oAuth.groupid }}
-              #x-issuerkid
-            - name: PREAUTHBRIDGE_OAUTH_ISSUER_KID
-              value: {{ .Values.config.oAuth.issuerKid }}
-              # x-jwksurl
-            - name: PREAUTHBRIDGE_WELLKNOWN_JWKS
-              value:  {{ .Values.config.wellKnown.jwks }}
-              #injected
-            - name: PREAUTHBRIDGE_OAUTH_SIGNER_JWKS_URL
-              value: {{ .Values.config.oAuth.signerJwksUrl }}
-              #x-credentialendpoint
-            - name: PREAUTHBRIDGE_OAUTH_CREDENTIALENDPOINT
-              value: {{ .Values.config.oAuth.credentialEndpoint }}
-              #x-key
-            - name: PREAUTHBRIDGE_OAUTH_KEY
-              value: {{ .Values.config.oAuth.key }}
-              #x-engine
-            - name: PREAUTHBRIDGE_OAUTH_ENGINE
-              value: {{ .Values.config.oAuth.engine }}
-{{- end }}
-            - name: LOG_LEVEL
-              value: {{ .Values.config.logLevel }}
-            - name: PREAUTHBRIDGE_LISTEN_ADDR
-              value: {{ .Values.server.http.host }}
-            - name: PREAUTHBRIDGE_LISTEN_PORT
-              value: "{{ .Values.server.http.port }}"
-            - name: PREAUTHBRIDGE_OAUTH_SIGNER_TOPIC
-              value: {{ .Values.config.oAuth.signerTopic }}
 
-           
-      {{- if .Values.resources }}
-        resources:
-{{ toYaml .Values.resources | indent 10 }}
-      {{- end }}
-        ports:
-          - containerPort: {{ .Values.config.servingPort }}
-        volumeMounts:
-          - mountPath: /app
-            name: config-volume
+            # x-namespace
+            - name: PREAUTHBRIDGE_OAUTH_NAMESPACE
+              value: {{ .Values.config.oAuth.namespace | quote }}
+
+            # x-group
+            - name: PREAUTHBRIDGE_OAUTH_GROUPID
+              value: {{ .Values.config.oAuth.groupid | quote }}
+
+            # x-issuerkid
+            - name: PREAUTHBRIDGE_OAUTH_ISSUER_KID
+              value: {{ .Values.config.oAuth.issuerKid | quote }}
+
+            # x-jwksurl
+            - name: PREAUTHBRIDGE_WELLKNOWN_JWKS
+              value: {{ .Values.config.wellKnown.jwks | quote }}
+
+            # injected
+            - name: PREAUTHBRIDGE_OAUTH_SIGNER_JWKS_URL
+              value: {{ .Values.config.oAuth.signerJwksUrl | quote }}
+
+            # x-credentialendpoint
+            - name: PREAUTHBRIDGE_OAUTH_CREDENTIALENDPOINT
+              value: {{ .Values.config.oAuth.credentialEndpoint | quote }}
+
+            # x-key
+            - name: PREAUTHBRIDGE_OAUTH_KEY
+              value: {{ .Values.config.oAuth.key | quote }}
+
+            # x-engine
+            - name: PREAUTHBRIDGE_OAUTH_ENGINE
+              value: {{ .Values.config.oAuth.engine | quote }}
+            {{- end }}
+
+            - name: LOG_LEVEL
+              value: {{ .Values.config.logLevel | quote }}
+
+            - name: PREAUTHBRIDGE_LISTEN_ADDR
+              value: {{ .Values.server.http.host | quote }}
+
+            - name: PREAUTHBRIDGE_LISTEN_PORT
+              value: {{ .Values.server.http.port | quote }}
+
+            - name: PREAUTHBRIDGE_OAUTH_SIGNER_TOPIC
+              value: {{ .Values.config.oAuth.signerTopic | quote }}
+
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.servingPort }}
+              protocol: TCP
+
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app
+
       volumes:
         - name: config-volume
           configMap:
