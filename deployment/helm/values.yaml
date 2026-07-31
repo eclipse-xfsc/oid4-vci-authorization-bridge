@@ -51,6 +51,14 @@ service:
   port: 8080
   type: ClusterIP
 
+resourceProvider:
+  enabled: true
+  name: ""
+  scope: Cluster
+  description: OAuth2 Provider
+  allow:
+    namespaces: []
+
 server:
   http:
     host: 0.0.0.0

@@ -1,10 +1,17 @@
 {{- if eq (index .Values.podAnnotations "inject.xfsc.io/enabled") "true" }}
-apiVersion: xfsc.dev/v1alpha1
-kind: ResourceProvision
+apiVersion: resources.xfsc.io/v1alpha1
+kind: ResourceProvider
 metadata:
   name: preauthbridge
 spec:
-  type: service
+  type: preauthbridge
+  scope: {{ .Values.resourceProvider.scope | quote }}
+  description: {{ .Values.resourceProvider.description | quote }}
+{{- with .Values.resourceProvider.allow.namespaces }}
+  allow:
+    namespaces:
+{{ toYaml . | indent 6 }}
+{{- end }}
   outputs:
     env:
       OAUTH_SIGNER_TOPIC: {{ .Values.config.oAuth.signerTopic }}
