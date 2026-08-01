@@ -1,4 +1,4 @@
-{{- if eq (get (default dict .Values.podAnnotations) "inject.xfsc.io/enabled") "false" }}
+{{- if eq (get (default dict .Values.podAnnotations) "inject.xfsc.io/enabled") "true" }}
 apiVersion: resources.xfsc.io/v1alpha1
 kind: ResourceClaim
 metadata:
