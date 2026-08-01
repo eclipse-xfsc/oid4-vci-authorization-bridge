@@ -105,7 +105,20 @@ spec:
             - name: PREAUTHBRIDGE_OAUTH_ENGINE
               value: {{ .Values.config.oAuth.engine | quote }}
             {{- end }}
+            {{- if eq (get (default dict .Values.podAnnotations) "inject.xfsc.io/enabled") "true" }}
+            - name: PREAUTHBRIDGE_REDIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-redis-credentials" .Release.Name | quote }}
+                  key: username
 
+            - name: PREAUTHBRIDGE_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ printf "%s-redis-credentials" .Release.Name | quote }}
+                  key: password
+
+             {{- end }}
             - name: LOG_LEVEL
               value: {{ .Values.config.logLevel | quote }}
 
