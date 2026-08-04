@@ -65,7 +65,7 @@ server:
     port: 8080
 
 redis:
-  provider: redis-main
+  provider: redis
 
 config:
   nats:
