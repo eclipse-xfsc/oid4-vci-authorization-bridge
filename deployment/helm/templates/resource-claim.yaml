@@ -10,7 +10,7 @@ spec:
   providerRef:
     name: {{ .Values.redis.provider | quote }}
 
-  secretRef:
+  externalSecretRef:
     name: {{ printf "%s-redis-credentials" .Release.Name | quote }}
 
   parameters:
