@@ -16,6 +16,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const keyPrefix = "auth:"
+
 type RedisDB struct {
 	client *redisPkg.Client
 }
@@ -43,7 +45,7 @@ func (r *RedisDB) SaveAuth(ctx context.Context, key string, authentication messa
 		return fmt.Errorf("failed to marshal json: %w", err)
 	}
 
-	if err := r.client.Rdb.Set(ctx, key, string(js), ttl).Err(); err != nil {
+	if err := r.client.Rdb.Set(ctx, keyPrefix+key, string(js), ttl).Err(); err != nil {
 		return err
 	}
 
@@ -51,7 +53,7 @@ func (r *RedisDB) SaveAuth(ctx context.Context, key string, authentication messa
 }
 
 func (r *RedisDB) GetAuth(ctx context.Context, key string) (*messaging.Authentication, error) {
-	js, err := r.client.Rdb.Get(ctx, key).Result()
+	js, err := r.client.Rdb.Get(ctx, keyPrefix+key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return nil, ErrKeyNotFound
@@ -69,7 +71,7 @@ func (r *RedisDB) GetAuth(ctx context.Context, key string) (*messaging.Authentic
 }
 
 func (r *RedisDB) DeleteAuth(ctx context.Context, key string) (bool, error) {
-	result, err := r.client.Rdb.Del(ctx, key).Result()
+	result, err := r.client.Rdb.Del(ctx, keyPrefix+key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return false, ErrKeyNotFound

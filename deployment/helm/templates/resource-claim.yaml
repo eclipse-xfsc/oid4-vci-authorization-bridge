@@ -17,5 +17,5 @@ spec:
     database: {{ default 0 .Values.config.database.db }}
     acl:
       keys:
-        - {{ printf "%s:*" .Release.Name | quote }}
+        - "auth:*"
 {{- end }}
