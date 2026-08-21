@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
-
 	ctxPkg "github.com/eclipse-xfsc/microservice-core-go/pkg/ctx"
 	redisPkg "github.com/eclipse-xfsc/microservice-core-go/pkg/db/redis"
 	errPkg "github.com/eclipse-xfsc/microservice-core-go/pkg/err"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -34,9 +34,7 @@ func NewRedisDB(ctx context.Context, config redisPkg.Config) (*RedisDB, error) {
 		return nil, err
 	}
 
-	return &RedisDB{
-		client: client,
-	}, nil
+	return &RedisDB{client: client}, nil
 }
 
 func (r *RedisDB) SaveAuth(ctx context.Context, key string, authentication messaging.Authentication, ttl time.Duration) error {
@@ -80,9 +78,28 @@ func (r *RedisDB) DeleteAuth(ctx context.Context, key string) (bool, error) {
 		return false, err
 	}
 
-	if result > 0 {
-		return true, nil
+	return result > 0, nil
+}
+
+func (r *RedisDB) Health(ctx context.Context) error {
+	key := keyPrefix + "health:" + uuid.NewString()
+	value := uuid.NewString()
+
+	if err := r.client.Rdb.Set(ctx, key, value, 10*time.Second).Err(); err != nil {
+		return fmt.Errorf("redis health write failed: %w", err)
 	}
 
-	return false, nil
+	got, err := r.client.Rdb.Get(ctx, key).Result()
+	if err != nil {
+		return fmt.Errorf("redis health read failed: %w", err)
+	}
+	if got != value {
+		return fmt.Errorf("redis health value mismatch")
+	}
+
+	if err := r.client.Rdb.Del(ctx, key).Err(); err != nil {
+		return fmt.Errorf("redis health cleanup failed: %w", err)
+	}
+
+	return nil
 }

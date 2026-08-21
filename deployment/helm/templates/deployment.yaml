@@ -25,7 +25,6 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccountName | quote }}
-
       {{- with .Values.image.pullSecrets }}
       imagePullSecrets:
         - name: {{ . | quote }}
@@ -35,73 +34,41 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}/{{ .Values.image.name }}:{{ default .Chart.AppVersion .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
-
           env:
             {{- if eq (get (default dict .Values.podAnnotations) "inject.xfsc.io/enabled") "false" }}
-            # injected
             - name: PREAUTHBRIDGE_NATS_URL
               value: {{ .Values.config.nats.url | quote }}
-
-            # injected
             - name: PREAUTHBRIDGE_NATS_REQUEST_TIMEOUT
               value: {{ .Values.config.nats.timeoutInSec | quote }}
-
-            # injected
             - name: PREAUTHBRIDGE_REDIS_HOSTS
               value: {{ .Values.config.database.hosts | quote }}
-
-            # injected
             - name: PREAUTHBRIDGE_REDIS_ISCLUSTER
               value: {{ .Values.config.database.iscluster | quote }}
-
-            # injected
             - name: PREAUTHBRIDGE_REDIS_DATABASE
               value: {{ .Values.config.database.db | quote }}
-
-            # injected
             - name: PREAUTHBRIDGE_REDIS_USERNAME
               value: {{ .Values.config.database.username | quote }}
-
-            # injected
             - name: PREAUTHBRIDGE_REDIS_PORT
               value: {{ .Values.config.database.port | quote }}
-
-            # injected
             - name: PREAUTHBRIDGE_REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-redis"
                   key: redis-password
-
-            # x-namespace
             - name: PREAUTHBRIDGE_OAUTH_NAMESPACE
               value: {{ .Values.config.oAuth.namespace | quote }}
-
-            # x-group
             - name: PREAUTHBRIDGE_OAUTH_GROUPID
               value: {{ .Values.config.oAuth.groupid | quote }}
-
-            # x-issuerkid
             - name: PREAUTHBRIDGE_OAUTH_ISSUER_KID
               value: {{ .Values.config.oAuth.issuerKid | quote }}
-
-            # x-jwksurl
             - name: PREAUTHBRIDGE_WELLKNOWN_JWKS
               value: {{ .Values.config.wellKnown.jwks | quote }}
-
-            # injected
             - name: PREAUTHBRIDGE_OAUTH_SIGNER_JWKS_URL
               value: {{ .Values.config.oAuth.signerJwksUrl | quote }}
-
-            # x-credentialendpoint
             - name: PREAUTHBRIDGE_OAUTH_CREDENTIALENDPOINT
               value: {{ .Values.config.oAuth.credentialEndpoint | quote }}
-
-            # x-key
             - name: PREAUTHBRIDGE_OAUTH_KEY
               value: {{ .Values.config.oAuth.key | quote }}
-
-            # x-engine
             - name: PREAUTHBRIDGE_OAUTH_ENGINE
               value: {{ .Values.config.oAuth.engine | quote }}
             {{- end }}
@@ -111,23 +78,18 @@ spec:
                 secretKeyRef:
                   name: {{ printf "%s-redis-credentials" .Release.Name | quote }}
                   key: username
-
             - name: PREAUTHBRIDGE_REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ printf "%s-redis-credentials" .Release.Name | quote }}
                   key: password
-
-             {{- end }}
+            {{- end }}
             - name: LOG_LEVEL
               value: {{ .Values.config.logLevel | quote }}
-
             - name: PREAUTHBRIDGE_LISTEN_ADDR
               value: {{ .Values.server.http.host | quote }}
-
             - name: PREAUTHBRIDGE_LISTEN_PORT
               value: {{ .Values.server.http.port | quote }}
-
             - name: PREAUTHBRIDGE_OAUTH_SIGNER_TOPIC
               value: {{ .Values.config.oAuth.signerTopic | quote }}
 
@@ -140,6 +102,30 @@ spec:
             - name: http
               containerPort: {{ .Values.config.servingPort }}
               protocol: TCP
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 2
+            failureThreshold: 30
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
 
           volumeMounts:
             - name: config-volume

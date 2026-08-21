@@ -11,32 +11,48 @@ import (
 	crypto "github.com/eclipse-xfsc/crypto-provider-service/pkg/messaging"
 	"github.com/eclipse-xfsc/nats-message-library/common"
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/config"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/health"
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
 	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/credential"
 	"github.com/google/uuid"
 )
 
-func New(ctx context.Context, exp int64,
-	storedAuth *messaging.Authentication,
-	configuration *credential.CredentialConfigurationIdentifier,
-	namespace, groupId, key, issuerKid, credentialEndpoint string) (string, error) {
+type Signer struct {
+	client *cloudeventprovider.CloudEventProviderClient
+	health *health.State
+}
 
-	subject := storedAuth.Request.BuildSubject()
-
-	client, err := cloudeventprovider.New(cloudeventprovider.Config{
-		Protocol: cloudeventprovider.ProtocolTypeNats,
-		Settings: cloudeventprovider.NatsConfig{
-			Url:          config.CurrentPreAuthBridgeConfig.Nats.Url,
-			QueueGroup:   config.CurrentPreAuthBridgeConfig.Nats.QueueGroup,
-			TimeoutInSec: config.CurrentPreAuthBridgeConfig.Nats.TimeoutInSec,
-		},
-	}, cloudeventprovider.ConnectionTypeReq, config.CurrentPreAuthBridgeConfig.OAuth.SignerTopic)
-
+func NewSigner(ceConfig cloudeventprovider.Config, healthState *health.State) (*Signer, error) {
+	client, err := cloudeventprovider.New(
+		ceConfig,
+		cloudeventprovider.ConnectionTypeReq,
+		config.CurrentPreAuthBridgeConfig.OAuth.SignerTopic,
+	)
 	if err != nil {
-		return "", err
+		healthState.SetSigner(false)
+		return nil, fmt.Errorf("failed to create signer request client: %w", err)
 	}
 
-	var p = make(map[string]interface{})
+	healthState.SetSigner(true)
+	return &Signer{client: client, health: healthState}, nil
+}
+
+func (s *Signer) Close() {
+	if s != nil && s.client != nil {
+		s.client.Close()
+	}
+	if s != nil && s.health != nil {
+		s.health.SetSigner(false)
+	}
+}
+
+func (s *Signer) Sign(ctx context.Context, exp int64,
+	storedAuth *messaging.Authentication,
+	configuration *credential.CredentialConfigurationIdentifier,
+	namespace, groupID, key, issuerKid, credentialEndpoint string) (string, error) {
+
+	subject := storedAuth.Request.BuildSubject()
+	p := make(map[string]interface{})
 	p["nonce"] = storedAuth.Nonce
 	p["aud"] = credentialEndpoint
 	p["iat"] = time.Now().UTC().Unix()
@@ -49,17 +65,15 @@ func New(ctx context.Context, exp int64,
 	}
 
 	pb, err := json.Marshal(p)
-
 	if err != nil {
 		return "", err
 	}
 
-	var ph = make(map[string]interface{})
+	ph := make(map[string]interface{})
 	ph["typ"] = "at+jwt"
 	ph["kid"] = issuerKid
 
 	pbh, err := json.Marshal(ph)
-
 	if err != nil {
 		return "", err
 	}
@@ -68,46 +82,44 @@ func New(ctx context.Context, exp int64,
 		"tenant_id":  storedAuth.TenantId,
 		"request_id": uuid.NewString(),
 		"namespace":  namespace,
-		"group":      groupId,
+		"group":      groupID,
 		"key":        key,
 		"payload":    pb,
 		"header":     pbh,
 	}
 
 	b, err := json.Marshal(payload)
-
 	if err != nil {
 		return "", err
 	}
 
 	event, err := cloudeventprovider.NewEvent("preauth bridge", crypto.SignerServiceSignTokenType, b)
-
 	if err != nil {
 		return "", err
 	}
 
-	rep, err := client.RequestCtx(context.Background(), event)
-
+	rep, err := s.client.RequestCtx(ctx, event)
 	if err != nil {
 		return "", err
 	}
+
 	if rep.Type() == crypto.SignerServiceSignTokenType {
 		var tok crypto.CreateTokenReply
-		err = json.Unmarshal(rep.Data(), &tok)
-		if err != nil {
+		if err = json.Unmarshal(rep.Data(), &tok); err != nil {
 			return "", errors.Join(errors.New("cannot unmarshal event reply data"), err)
 		}
-		return string(tok.Token), err
-	} else if rep.Type() == crypto.SignerServiceErrorType {
+		return string(tok.Token), nil
+	}
+
+	if rep.Type() == crypto.SignerServiceErrorType {
 		var data common.Reply
-		err = json.Unmarshal(rep.Data(), &data)
-		if err != nil {
+		if err = json.Unmarshal(rep.Data(), &data); err != nil {
 			return "", errors.Join(errors.New("cannot unmarshal event error reply data"), err)
 		}
 		return "", errors.Join(errors.New("error response from signer"),
 			fmt.Errorf("status: %s id: %s msg: %s", data.Error.Status, data.Error.Id, data.Error.Msg),
 		)
-	} else {
-		return "", fmt.Errorf("invalid response type received from signer. response type: %s", rep.Type())
 	}
+
+	return "", fmt.Errorf("invalid response type received from signer. response type: %s", rep.Type())
 }

@@ -19,11 +19,11 @@
                 "PREAUTHBRIDGE_OAUTH_SIGNER_JWKS_URL": "http://localhost:8888/v1/jwks",
                 "PREAUTHBRIDGE_OAUTH_CREDENTIALENDPOINT": "test",
                 "PREAUTHBRIDGE_OAUTH_KEY": "eckey",
-                "PREAUTHBRIDGE_OAUTH_NAMESPACE": "signer",
-                "PREAUTHBRIDGE_REDIS_PASSWORD": "r7fOGyA5Ve",
+                "PREAUTHBRIDGE_OAUTH_NAMESPACE": "tenant_space",
+                "PREAUTHBRIDGE_OAUTH_GROUPID": "signer",
+                "PREAUTHBRIDGE_REDIS_PASSWORD": "dev-redis-password",
                 "PREAUTHBRIDGE_OAUTH_ISSUER_KID": "did:web:xxxx#eckey",
-                "PREAUTHBRIDGE_WELLKNOWN_JWKS": "http://...",
-
+                "PREAUTHBRIDGE_WELLKNOWN_JWKS": "http://..."
             }
         }
     ]

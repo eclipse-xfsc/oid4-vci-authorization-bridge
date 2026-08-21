@@ -14,4 +14,5 @@ type Database interface {
 	SaveAuth(ctx context.Context, key string, authentication messaging.Authentication, ttl time.Duration) error
 	GetAuth(ctx context.Context, key string) (*messaging.Authentication, error)
 	DeleteAuth(ctx context.Context, key string) (bool, error)
+	Health(ctx context.Context) error
 }

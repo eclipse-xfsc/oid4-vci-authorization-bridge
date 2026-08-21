@@ -7,12 +7,11 @@ import (
 	"time"
 
 	"github.com/eclipse-xfsc/nats-message-library/common"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/database"
+	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/generator"
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/messaging"
 	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/credential"
 	"github.com/eclipse-xfsc/oid4-vci-vp-library/model/oauth"
-
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/database"
-	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/pkg/generator"
 )
 
 const codeLength = 20
@@ -26,28 +25,25 @@ func NewAuthHandler(dbConnection database.Database) *AuthHandler {
 	return &AuthHandler{db: dbConnection}
 }
 
-func (a *AuthHandler) Generate(ctx context.Context, req common.Request, withPin bool, ttl time.Duration, nonce string, credential_configurations []credential.CredentialConfigurationIdentifier, claims []oauth.Claim) (*messaging.Authentication, error) {
+func (a *AuthHandler) Generate(ctx context.Context, req common.Request, withPin bool, ttl time.Duration, nonce string, credentialConfigurations []credential.CredentialConfigurationIdentifier, claims []oauth.Claim) (*messaging.Authentication, error) {
 	code, err := a.GenerateCode()
 	if err != nil {
 		return nil, fmt.Errorf("error occured while generating new authCode: %w", err)
 	}
-
 	newAuth := messaging.Authentication{
 		Request:                  req,
 		Code:                     code,
 		ExpiresAt:                time.Now().Add(ttl),
 		Nonce:                    nonce,
-		CredentialConfigurations: credential_configurations,
+		CredentialConfigurations: credentialConfigurations,
 		Claims:                   claims,
 	}
 
-	var pin string
 	if withPin {
-		pin, err = a.GeneratePin()
+		pin, err := a.GeneratePin()
 		if err != nil {
 			return nil, fmt.Errorf("error occured while generating new authPin: %w", err)
 		}
-
 		newAuth.Pin = pin
 		newAuth.TxCode = &credential.TxCode{
 			InputMode:   "numeric",
@@ -67,25 +63,20 @@ func (a *AuthHandler) GetAuth(ctx context.Context, key string) (*messaging.Authe
 	storedAuth, err := a.db.GetAuth(ctx, key)
 	if err != nil {
 		if errors.Is(err, database.ErrKeyNotFound) {
-			// key does not exist in the database anymore -> ttl is over
 			return nil, fmt.Errorf("not found")
 		}
-
 		return nil, err
 	}
-
 	return storedAuth, nil
 }
 
 func (a *AuthHandler) ValidateAuth(ctx context.Context, key string) (valid bool, nonce string, auth *messaging.Authentication, err error) {
 	auth, err = a.db.GetAuth(ctx, key)
-
 	if err != nil || auth == nil {
 		return false, "", nil, err
 	}
 
 	b, err := a.db.DeleteAuth(ctx, key)
-
 	if err != nil {
 		return false, "", nil, err
 	}
@@ -100,14 +91,15 @@ func (a *AuthHandler) StoreAuth(ctx context.Context, key string, auth messaging.
 func (a *AuthHandler) Delete(ctx context.Context, key string) (bool, error) {
 	if _, err := a.db.DeleteAuth(ctx, key); err != nil {
 		if errors.Is(err, database.ErrKeyNotFound) {
-			// key does not exist in the database anymore -> ttl is over
 			return false, nil
 		}
-
 		return false, fmt.Errorf("error occured while deleting pin from database for key %s: %w", key, err)
 	}
-
 	return true, nil
+}
+
+func (a *AuthHandler) Health(ctx context.Context) error {
+	return a.db.Health(ctx)
 }
 
 func (a *AuthHandler) GenerateCode() (string, error) {

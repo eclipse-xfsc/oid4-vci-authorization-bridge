@@ -2,75 +2,200 @@ version: "3.9"
 
 services:
   nats:
-    image: nats:latest
-    restart: always
+    image: nats:2.10-alpine
+    restart: unless-stopped
+    command:
+      - "--http_port"
+      - "8222"
     ports:
-      - '4222:4222' # NATS server port
-      - '8222:8222' # NATS server monitoring port
-    networks:
-      - internal
-  redis:
-    image: redis:6.2-alpine
-    restart: always
-    ports:
-      - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning --requirepass r7fOGyA5Ve
-    volumes:
-      - redis:/data
-    networks:
-      - internal
-  signer:
-    image: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/tsa/signer:main
-    networks:
-      - internal
-    ports:
-      - '8888:8080'
-    depends_on:
-      - nats
-    environment:
-        SDJWT_SERVICE_URL: http://sdjwt:3000
-        VAULT_ADRESS: http://vault:8200
-        VAULT_TOKEN: test
-        NATS_HOST: nats://nats:4222
-        NATS_TOPIC: signer-topic
-        NATS_STATUS_TOPIC: status.data.create
-        NATS_STATUS_VERIFY_TOPIC: status.data.verify
-        CLOUDEVENTPROVIDER_MESSAGING_PROTOCOL: nats
-        CLOUDEVENTPROVIDER_MESSAGING_NATS_URL: nats://nats:4222
-        ENGINE_PATH: /opt/plugins/hashicorp-vault-provider.so
-  vault:
-    image: hashicorp/vault
-    ports:
-      - 8200:8200
-    networks:
-      - internal
-      
-    environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=test
+      - "${NATS_PORT:-4222}:4222"
+      - "${NATS_MONITORING_PORT:-8222}:8222"
     healthcheck:
-      test: [ "CMD-SHELL", "sh -c 'VAULT_ADDR=http://vault:8200 vault status'"]
+      test:
+        - CMD
+        - wget
+        - -qO-
+        - http://127.0.0.1:8222/healthz
       interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
+      timeout: 3s
+      retries: 12
+    networks:
+      - internal
 
-  # vault-init:
-  #   # to create a new key // curl --header "X-Vault-Token: test" --request POST --data @keyConfig.json http://localhost:8200/v1/tenant_space/keys/signerkey
-  #   # retrieve a key backup and save it to signerkey.json // curl --header "X-Vault-Token: test" --request GET  http://localhost:8200/v1/tenant_space/backup/signerkey
-  #   image: curlimages/curl:latest
-  #   user: root
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - "${REDIS_PASSWORD:-dev-redis-password}"
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-dev-redis-password}"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping | grep -q PONG
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks:
+      - internal
+
+  openbao:
+    image: openbao/openbao:latest
+    restart: unless-stopped
+    command: server -dev -dev-root-token-id=${VAULT_TOKEN:-dev-root-token}
+    cap_add:
+      - IPC_LOCK
+    environment:
+      BAO_ADDR: http://0.0.0.0:8200
+      BAO_API_ADDR: http://openbao:8200
+    ports:
+      - "${OPENBAO_PORT:-8200}:8200"
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -qO-
+        - http://127.0.0.1:8200/v1/sys/health
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      - internal
+
+  init-secretengine:
+    image: curlimages/curl:8.12.1
+    restart: "no"
+    depends_on:
+      openbao:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: http://openbao:8200
+      VAULT_TOKEN: "${VAULT_TOKEN:-dev-root-token}"
+      VAULT_TRANSIT_MOUNT: "${VAULT_TRANSIT_MOUNT:-signer}"
+      VAULT_SIGNING_KEY: "${VAULT_SIGNING_KEY:-signerkey}"
+    volumes:
+      - ./scripts/vault/vault-init.sh:/usr/local/bin/vault-init.sh:ro
+    entrypoint:
+      - sh
+      - -ec
+      - sh /usr/local/bin/vault-init.sh
+    networks:
+      - internal
+
+  crypto-provider:
+    image: node-654e3bca7fbeeed18f81d7c7.de-west-1.xaas.plus.cloud/tsa/crypto-provider-hashicorp-vault-plugin@sha256:b65581777a9fc28d3aac5757e7125d8e996132753826d55740207166a3aff0bd
+    restart: unless-stopped
+    depends_on:
+      openbao:
+        condition: service_healthy
+      init-secretengine:
+        condition: service_completed_successfully
+    environment:
+      CRYPTO_GRPC_ADDR: 0.0.0.0:50051
+      VAULT_ADRESS: http://openbao:8200
+      VAULT_TOKEN: "${VAULT_TOKEN:-dev-root-token}"
+    expose:
+      - "50051"
+    ports:
+      - "${CRYPTO_PROVIDER_PORT:-50051}:50051"
+    networks:
+      - internal
+
+  signer:
+    image: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/tsa/signer:2.2.0
+    restart: unless-stopped
+    depends_on:
+      nats:
+        condition: service_healthy
+      openbao:
+        condition: service_healthy
+      init-secretengine:
+        condition: service_completed_successfully
+      crypto-provider:
+        condition: service_started
+    ports:
+      - "${SIGNER_PORT:-8888}:8080"
+    environment:
+      SDJWT_SERVICE_URL: "${SDJWT_SERVICE_URL:-http://sdjwt:3000}"
+      VAULT_ADRESS: http://openbao:8200
+      VAULT_TOKEN: "${VAULT_TOKEN:-dev-root-token}"
+      GRPC_ADRESS: ""
+      NATS_HOST: nats://nats:4222
+      NATS_TOPIC: "${SIGNER_TOPIC:-signer-topic}"
+      NATS_STATUS_TOPIC: status.data.create
+      NATS_STATUS_VERIFY_TOPIC: status.data.verify
+      CLOUDEVENTPROVIDER_MESSAGING_PROTOCOL: nats
+      CLOUDEVENTPROVIDER_MESSAGING_NATS_URL: nats://nats:4222
+      CRYPTO_GRPC_ADDR: crypto-provider:50051
+    networks:
+      - internal
+
+  # authorization-bridge:
+  #   image: "${BRIDGE_IMAGE:-oid4-vci-authorization-bridge:local}"
+  #   build:
+  #     context: ../..
+  #     dockerfile: ./deployment/docker/Dockerfile
+  #   restart: unless-stopped
   #   depends_on:
-  #     vault:
+  #     redis:
   #       condition: service_healthy
+  #     nats:
+  #       condition: service_healthy
+  #     signer:
+  #       condition: service_started
+  #   env_file:
+  #     - path: ../../.env
+  #       required: false
+  #   ports:
+  #     - "${BRIDGE_PORT:-8080}:8080"
+  #   environment:
+  #     LOG_LEVEL: "${LOG_LEVEL:-debug}"
+  #     PREAUTHBRIDGE_LISTEN_ADDR: 0.0.0.0
+  #     PREAUTHBRIDGE_LISTEN_PORT: "8080"
+
+  #     PREAUTHBRIDGE_NATS_URL: nats://nats:4222
+  #     PREAUTHBRIDGE_NATS_REQUEST_TIMEOUT: "${NATS_REQUEST_TIMEOUT:-10s}"
+
+  #     PREAUTHBRIDGE_REDIS_HOSTS: redis
+  #     PREAUTHBRIDGE_REDIS_PORT: "6379"
+  #     PREAUTHBRIDGE_REDIS_DATABASE: "0"
+  #     PREAUTHBRIDGE_REDIS_ISCLUSTER: "false"
+  #     PREAUTHBRIDGE_REDIS_USERNAME: default
+  #     PREAUTHBRIDGE_REDIS_PASSWORD: "${REDIS_PASSWORD:-dev-redis-password}"
+
+  #     PREAUTHBRIDGE_OAUTH_SIGNER_TOPIC: "${SIGNER_TOPIC:-signer-topic}"
+  #     PREAUTHBRIDGE_OAUTH_NAMESPACE: "${SIGNER_NAMESPACE:-signer}"
+  #     PREAUTHBRIDGE_OAUTH_GROUPID: "${SIGNER_GROUP_ID:-}"
+  #     PREAUTHBRIDGE_OAUTH_KEY: "${VAULT_SIGNING_KEY:-signerkey}"
+  #     PREAUTHBRIDGE_OAUTH_ISSUER_KID: "${ISSUER_KID:-did:web:localhost#signerkey}"
+  #     PREAUTHBRIDGE_OAUTH_CREDENTIALENDPOINT: "${CREDENTIAL_ENDPOINT:-http://localhost:8081/credential}"
+  #     PREAUTHBRIDGE_OAUTH_SIGNER_JWKS_URL: "${SIGNER_JWKS_URL:-http://signer:8080/.well-known/jwks.json}"
+
+  #     PREAUTHBRIDGE_WELLKNOWN_ISSUER: "${ISSUER_URL:-http://localhost:8080}"
+  #     PREAUTHBRIDGE_WELLKNOWN_TOKENENDPOINT: "${TOKEN_ENDPOINT:-http://localhost:8080/token}"
+  #     PREAUTHBRIDGE_WELLKNOWN_JWKS: "${JWKS_URL:-http://localhost:8888/.well-known/jwks.json}"
+  #   healthcheck:
+  #     test:
+  #       - CMD-SHELL
+  #       - wget -qO- http://127.0.0.1:8080/health >/dev/null || exit 1
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 12
+  #     start_period: 10s
   #   networks:
   #     - internal
-  #   volumes:
-  #     - ./scripts/vault/init-keys.sh:/vault-scripts/init-keys.sh
-  #     - ./scripts/vault/signerkey.json:/vault-scripts/signerkey.json
-  #   command: ["/vault-scripts/init-keys.sh"]
+
+volumes:
+  redis-data:
 
 networks:
   internal:
-volumes:
-  redis:
-    driver: local
+    driver: bridge
