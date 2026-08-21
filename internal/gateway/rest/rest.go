@@ -69,7 +69,7 @@ func (a API) GetWellKnownHandler(c *fiber.Ctx) error {
 	if value := c.Get("x-issuer"); value != "" {
 		wellKnown.Issuer = value
 	}
-	if value := c.Get("x-jwksurl"); value != "" {
+	if value := c.Get("x-jwks-url"); value != "" {
 		wellKnown.Jwks = value
 	}
 	if value := c.Get("x-tokenendpoint"); value != "" {
