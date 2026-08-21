@@ -19,7 +19,10 @@ podAnnotations:
     inject.xfsc.io/enabled: "false"
     inject.xfsc.io/needs: "nats,redis,signer"
     inject.xfsc.io/env-prefix: "PREAUTHBRIDGE" 
-
+    inject.xfsc.io/env-replacements: |
+      {
+        "SIGNER_TOPIC": "OAUTH_SIGNER_TOPIC"
+      }
 
 resources:
   requests:
