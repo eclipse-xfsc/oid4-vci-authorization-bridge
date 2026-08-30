@@ -92,6 +92,8 @@ spec:
               value: {{ .Values.server.http.port | quote }}
             - name: PREAUTHBRIDGE_OAUTH_SIGNER_TOPIC
               value: {{ .Values.config.oAuth.signerTopic | quote }}
+            - name: PREAUTHBRIDGE_GRANT_TYPES_SUPPORTED
+              value: "urn:ietf:params:oauth:grant-type:pre-authorized_code"
 
           {{- with .Values.resources }}
           resources:

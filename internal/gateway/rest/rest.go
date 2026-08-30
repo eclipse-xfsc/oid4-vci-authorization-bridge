@@ -31,6 +31,7 @@ func NewRestApi(authHandler security.AuthHandler, signer *token.Signer, healthSt
 	app := fiber.New()
 	app.Post("/token", api.GetTokenHandler)
 	app.Get("/.well-known/openid-configuration", api.GetWellKnownHandler)
+	app.Get("/.well-known/oauth-authorization-server ", api.GetWellKnownAuthHandler)
 	app.Get("/.well-known/jwks.json", api.GetJwksHandler)
 	app.Get("/health", api.HealthCheckHandler)
 	app.Head("/health", api.HealthCheckHandler)
@@ -65,6 +66,20 @@ func (a API) HealthCheckHandler(c *fiber.Ctx) error {
 
 func (a API) GetWellKnownHandler(c *fiber.Ctx) error {
 	wellKnown := config.CurrentPreAuthBridgeConfig.WellKnown
+	if value := c.Get("x-issuer"); value != "" {
+		wellKnown.Issuer = value
+	}
+	if value := c.Get("x-jwks-url"); value != "" {
+		wellKnown.Jwks = value
+	}
+	if value := c.Get("x-tokenendpoint"); value != "" {
+		wellKnown.TokenEndpoint = value
+	}
+	return c.JSON(wellKnown)
+}
+
+func (a API) GetWellKnownAuthHandler(c *fiber.Ctx) error {
+	wellKnown := config.CurrentPreAuthBridgeConfig.WellKnownAuth
 	if value := c.Get("x-issuer"); value != "" {
 		wellKnown.Issuer = value
 	}
