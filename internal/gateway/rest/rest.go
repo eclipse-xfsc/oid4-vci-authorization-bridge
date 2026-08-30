@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/eclipse-xfsc/oid4-vci-authorization-bridge/v2/internal/config"
@@ -115,115 +114,381 @@ func (a API) GetJwksHandler(c *fiber.Ctx) error {
 }
 
 func (a API) GetTokenHandler(c *fiber.Ctx) error {
-	invalidErrorResponse := map[string]string{"error": "invalid_request"}
+	invalidRequest := fiber.Map{
+		"error": "invalid_request",
+	}
+
+	invalidGrant := fiber.Map{
+		"error": "invalid_grant",
+	}
+
+	//
+	// Resolve tenant / signer configuration.
+	//
 
 	namespace := config.CurrentPreAuthBridgeConfig.OAuth.Namespace
 	if value := c.Get("x-namespace"); value != "" {
 		namespace = value
 	}
+
 	group := config.CurrentPreAuthBridgeConfig.OAuth.GroupId
 	if value := c.Get("x-group"); value != "" {
 		group = value
 	}
+
 	key := config.CurrentPreAuthBridgeConfig.OAuth.Key
 	if value := c.Get("x-key"); value != "" {
 		key = value
 	}
+
 	issuerKid := config.CurrentPreAuthBridgeConfig.OAuth.IssuerKid
 	if value := c.Get("x-issuerKid"); value != "" {
 		issuerKid = value
 	}
+
 	credentialEndpoint := config.CurrentPreAuthBridgeConfig.OAuth.CredentialEndpoint
 	if value := c.Get("x-credentialendpoint"); value != "" {
 		credentialEndpoint = value
 	}
 
+	//
+	// Validate grant type.
+	//
+
+	grantType := c.FormValue("grant_type")
+
+	if grantType != string(oauth.PreAuthorizedCodeGrant) {
+		logrus.Errorf(
+			"unsupported grant type: %s",
+			grantType,
+		)
+
+		return c.Status(fiber.StatusBadRequest).JSON(
+			fiber.Map{
+				"error": "unsupported_grant_type",
+			},
+		)
+	}
+
 	code := c.FormValue("pre-authorized_code")
-	pin := c.FormValue("tx_code")
-	authorizationDetails := c.FormValue("authorization_details")
-	logrus.Info("Code " + code + " Pin: " + pin + " authorization Details:" + authorizationDetails)
+	txCode := c.FormValue("tx_code")
+	authorizationDetailsRaw := c.FormValue("authorization_details")
 
-	storedAuth, err := a.authHandler.GetAuth(c.UserContext(), code)
+	if code == "" {
+		logrus.Error("pre-authorized_code is missing")
+		return c.Status(fiber.StatusBadRequest).JSON(invalidRequest)
+	}
+
+	logrus.WithFields(logrus.Fields{
+		"grant_type":            grantType,
+		"authorization_details": authorizationDetailsRaw != "",
+	}).Debug("token request received")
+
+	//
+	// Resolve pre-authorized code.
+	//
+
+	storedAuth, err := a.authHandler.GetAuth(
+		c.UserContext(),
+		code,
+	)
 	if err != nil {
-		logrus.Error(fiber.NewError(fiber.StatusUnauthorized, "invalid auth code specified"))
-		return c.Status(fiber.StatusBadRequest).JSON(invalidErrorResponse)
+		logrus.WithError(err).Error(
+			"invalid pre-authorized code",
+		)
+
+		return c.Status(fiber.StatusBadRequest).JSON(invalidGrant)
 	}
-	if storedAuth.Pin != pin {
-		logrus.Error(fiber.NewError(fiber.StatusUnauthorized, "authentication code and pin are not matching"))
-		return c.Status(fiber.StatusBadRequest).JSON(invalidErrorResponse)
-	}
+
 	if storedAuth.ExpiresAt.Before(time.Now()) {
-		logrus.Error(fiber.NewError(fiber.StatusUnauthorized, "authentication expired"))
-		return c.Status(fiber.StatusBadRequest).JSON(invalidErrorResponse)
-	}
-	if _, err := a.authHandler.Delete(c.UserContext(), code); err != nil {
-		logrus.Errorf("error occured while deleting authentication code from database: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(invalidErrorResponse)
+		logrus.Error("pre-authorized code expired")
+
+		return c.Status(fiber.StatusBadRequest).JSON(invalidGrant)
 	}
 
-	exp := storedAuth.ExpiresAt.Sub(time.Now())
-	tokenResp := oauth.Token{
-		TokenType:       "Bearer",
-		ExpiresIn:       int64(exp.Seconds()),
-		CNonce:          storedAuth.Nonce,
-		CNonceExpiresIn: int64(exp.Seconds()),
+	//
+	// Validate tx_code.
+	//
+	// An empty stored PIN means that this authorization does not require
+	// a tx_code.
+	//
+
+	if storedAuth.Pin != "" {
+		if txCode == "" {
+			logrus.Error(
+				"tx_code is required but missing",
+			)
+
+			return c.Status(fiber.StatusBadRequest).JSON(invalidGrant)
+		}
+
+		if storedAuth.Pin != txCode {
+			logrus.Error(
+				"tx_code does not match",
+			)
+
+			return c.Status(fiber.StatusBadRequest).JSON(invalidGrant)
+		}
 	}
 
-	var configuration *credential.CredentialConfigurationIdentifier
-	if authorizationDetails != "" {
-		decoded, err := url.QueryUnescape(authorizationDetails)
-		if err != nil {
-			logrus.Error(err)
-			return c.Status(fiber.StatusBadRequest).JSON(invalidErrorResponse)
+	//
+	// Resolve requested Credential Configuration.
+	//
+
+	var selectedConfiguration *credential.CredentialConfigurationIdentifier
+
+	var tokenAuthorizationDetails []oauth.AuthorizationDetails
+
+	if authorizationDetailsRaw != "" {
+		var requestedDetails []oauth.AuthorizationDetails
+
+		if err := json.Unmarshal(
+			[]byte(authorizationDetailsRaw),
+			&requestedDetails,
+		); err != nil {
+			logrus.WithError(err).Error(
+				"invalid authorization_details",
+			)
+
+			return c.Status(fiber.StatusBadRequest).JSON(invalidRequest)
 		}
-		var details oauth.AuthorizationDetails
-		if err := json.Unmarshal([]byte(decoded), &details); err != nil {
-			logrus.Error(err)
-			return c.Status(fiber.StatusBadRequest).JSON(invalidErrorResponse)
+
+		if len(requestedDetails) == 0 {
+			logrus.Error(
+				"authorization_details must not be empty",
+			)
+
+			return c.Status(fiber.StatusBadRequest).JSON(invalidRequest)
 		}
-		found := false
-		index := 0
-		for i, cfg := range storedAuth.CredentialConfigurations {
-			if cfg.Id == details.CredentialConfigurationID {
+
+		for _, details := range requestedDetails {
+			if details.Type != oauth.AuthorizationDetailsTypeOpenIDCredential {
+				logrus.Errorf(
+					"unsupported authorization_details type: %s",
+					details.Type,
+				)
+
+				return c.Status(fiber.StatusBadRequest).JSON(invalidRequest)
+			}
+
+			if details.CredentialConfigurationID == "" {
+				logrus.Error(
+					"credential_configuration_id is missing",
+				)
+
+				return c.Status(fiber.StatusBadRequest).JSON(invalidRequest)
+			}
+
+			found := false
+
+			for i := range storedAuth.CredentialConfigurations {
+				cfg := &storedAuth.CredentialConfigurations[i]
+
+				if cfg.Id != details.CredentialConfigurationID {
+					continue
+				}
+
 				found = true
-				index = i
+
+				//
+				// credential_identifiers in the request, when supplied,
+				// must be part of the authorization represented by the
+				// pre-authorized code.
+				//
+
+				if len(details.CredentialIdentifiers) > 0 &&
+					!IsSubset(
+						cfg.CredentialIdentifiers,
+						details.CredentialIdentifiers,
+					) {
+
+					logrus.Error(
+						"requested credential identifiers are not authorized",
+					)
+
+					return c.Status(fiber.StatusBadRequest).JSON(
+						invalidRequest,
+					)
+				}
+
+				credentialIdentifiers := cfg.CredentialIdentifiers
+
+				if len(details.CredentialIdentifiers) > 0 {
+					credentialIdentifiers = details.CredentialIdentifiers
+				}
+
+				tokenAuthorizationDetails = append(
+					tokenAuthorizationDetails,
+					oauth.AuthorizationDetails{
+						Type: oauth.AuthorizationDetailsTypeOpenIDCredential,
+
+						CredentialConfigurationID: cfg.Id,
+
+						CredentialIdentifiers: credentialIdentifiers,
+
+						Claims: details.Claims,
+					},
+				)
+
+				//
+				// Signer currently accepts only a single configuration.
+				//
+				// Until the signer API supports multiple credential
+				// configurations, reject requests selecting multiple
+				// configurations.
+				//
+
+				if selectedConfiguration != nil &&
+					selectedConfiguration.Id != cfg.Id {
+
+					logrus.Error(
+						"multiple credential configurations are not supported by the signer",
+					)
+
+					return c.Status(fiber.StatusBadRequest).JSON(
+						invalidRequest,
+					)
+				}
+
+				selectedConfiguration = cfg
+
 				break
 			}
+
+			if !found {
+				logrus.Errorf(
+					"credential configuration %q is not authorized",
+					details.CredentialConfigurationID,
+				)
+
+				return c.Status(fiber.StatusBadRequest).JSON(
+					invalidRequest,
+				)
+			}
 		}
-		if !found || !IsSubset(storedAuth.CredentialConfigurations[index].CredentialIdentifier, details.CredentialIdentifiers) {
-			logrus.Error("credential definition matches not to the request")
-			return c.Status(fiber.StatusBadRequest).JSON(invalidErrorResponse)
-		}
-		tokenResp.AuthorizationDetails = &oauth.AuthorizationDetails{
-			Type: "openid_credential", CredentialConfigurationID: details.CredentialConfigurationID,
-			CredentialIdentifiers: details.CredentialIdentifiers, Claims: details.Claims,
-		}
-		configuration = &storedAuth.CredentialConfigurations[index]
+
 	} else if len(storedAuth.CredentialConfigurations) == 1 {
-		tokenResp.AuthorizationDetails = &oauth.AuthorizationDetails{
-			Type: "openid_credential", CredentialConfigurationID: storedAuth.CredentialConfigurations[0].Id,
-			CredentialIdentifiers: storedAuth.CredentialConfigurations[0].CredentialIdentifier, Claims: storedAuth.Claims,
+		cfg := &storedAuth.CredentialConfigurations[0]
+
+		selectedConfiguration = cfg
+
+		tokenAuthorizationDetails = []oauth.AuthorizationDetails{
+			{
+				Type: oauth.AuthorizationDetailsTypeOpenIDCredential,
+
+				CredentialConfigurationID: cfg.Id,
+
+				CredentialIdentifiers: cfg.CredentialIdentifiers,
+
+				Claims: storedAuth.Claims,
+			},
 		}
-		configuration = &storedAuth.CredentialConfigurations[0]
 	}
 
-	newToken, err := a.signer.Sign(c.UserContext(), storedAuth.ExpiresAt.Unix(), storedAuth, configuration,
-		namespace, group, key, issuerKid, credentialEndpoint)
-	if err != nil || newToken == "" {
-		logrus.Errorf("error occured while retrieving token from authentication server: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(invalidErrorResponse)
+	//
+	// Issue Access Token.
+	//
+
+	ttl := time.Duration(
+		config.CurrentPreAuthBridgeConfig.DefaultTtlInMin,
+	) * time.Minute
+
+	tokenExpiresAt := time.Now().Add(ttl)
+
+	newToken, err := a.signer.Sign(
+		c.UserContext(),
+		tokenExpiresAt.Unix(),
+		storedAuth,
+		selectedConfiguration,
+		namespace,
+		group,
+		key,
+		issuerKid,
+		credentialEndpoint,
+	)
+
+	if err != nil {
+		logrus.WithError(err).Error(
+			"failed to create access token",
+		)
+
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			fiber.Map{
+				"error": "server_error",
+			},
+		)
 	}
 
-	ttl := time.Duration(config.CurrentPreAuthBridgeConfig.DefaultTtlInMin) * time.Minute
+	if newToken == "" {
+		logrus.Error("signer returned empty access token")
+
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			fiber.Map{
+				"error": "server_error",
+			},
+		)
+	}
+
+	//
+	// Store Access Token authorization.
+	//
+
 	storedAuth.Token = newToken
-	storedAuth.ExpiresAt = time.Now().Add(ttl)
-	if err := a.authHandler.StoreAuth(c.UserContext(), newToken, *storedAuth); err != nil {
-		logrus.Errorf("failed to store updated auth to db: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(invalidErrorResponse)
+	storedAuth.ExpiresAt = tokenExpiresAt
+
+	if err := a.authHandler.StoreAuth(
+		c.UserContext(),
+		newToken,
+		*storedAuth,
+	); err != nil {
+
+		logrus.WithError(err).Error(
+			"failed to store access token authorization",
+		)
+
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			fiber.Map{
+				"error": "server_error",
+			},
+		)
 	}
 
-	tokenResp.AccessToken = newToken
-	return c.JSON(tokenResp)
+	//
+	// Consume pre-authorized code only after token issuance succeeded.
+	//
+
+	if _, err := a.authHandler.Delete(
+		c.UserContext(),
+		code,
+	); err != nil {
+
+		logrus.WithError(err).Error(
+			"failed to delete consumed pre-authorized code",
+		)
+
+		return c.Status(fiber.StatusInternalServerError).JSON(
+			fiber.Map{
+				"error": "server_error",
+			},
+		)
+	}
+
+	//
+	// OID4VCI 1.0 Token Response.
+	//
+	// c_nonce and c_nonce_expires_in are intentionally not returned.
+	// A nonce is obtained from the optional Nonce Endpoint instead.
+	//
+
+	tokenResponse := oauth.Token{
+		AccessToken: newToken,
+		TokenType:   "Bearer",
+		ExpiresIn:   int64(ttl.Seconds()),
+
+		AuthorizationDetails: tokenAuthorizationDetails,
+	}
+
+	return c.JSON(tokenResponse)
 }
 
 func IsSubset(big, small []string) bool {
