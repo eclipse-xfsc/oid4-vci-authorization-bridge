@@ -31,7 +31,7 @@ func NewRestApi(authHandler security.AuthHandler, signer *token.Signer, healthSt
 	app := fiber.New()
 	app.Post("/token", api.GetTokenHandler)
 	app.Get("/.well-known/openid-configuration", api.GetWellKnownHandler)
-	app.Get("/.well-known/oauth-authorization-server ", api.GetWellKnownAuthHandler)
+	app.Get("/.well-known/oauth-authorization-server", api.GetWellKnownAuthHandler)
 	app.Get("/.well-known/jwks.json", api.GetJwksHandler)
 	app.Get("/health", api.HealthCheckHandler)
 	app.Head("/health", api.HealthCheckHandler)
