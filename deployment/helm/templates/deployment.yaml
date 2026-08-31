@@ -94,6 +94,8 @@ spec:
               value: {{ .Values.config.oAuth.signerTopic | quote }}
             - name: PREAUTHBRIDGE_GRANT_TYPES_SUPPORTED
               value: "urn:ietf:params:oauth:grant-type:pre-authorized_code"
+            - name: PREAUTHBRIDGE_TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED
+              value: "none"
 
           {{- with .Values.resources }}
           resources:
