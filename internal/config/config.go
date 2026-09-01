@@ -50,6 +50,8 @@ type preAuthBridgeConfiguration struct {
 		CodeChallengeMethodsSupported []string `mapstructure:"code_challenge_methods_supported" envconfig:"CODE_CHALLENGE_METHODS_SUPPORTED" json:"code_challenge_methods_supported,omitempty"`
 
 		AuthorizationDetailsTypesSupported []string `mapstructure:"authorization_details_types_supported" envconfig:"AUTHORIZATION_DETAILS_TYPES_SUPPORTED" json:"authorization_details_types_supported,omitempty"`
+
+		PreAuthorizedGrantAnonymousAccessSupported bool `mapstructure:"pre-authorized_grant_anonymous_access_supported" envconfig:"PRE_AUTHORIZED_GRANT_ANONYMOUS_ACCESS_SUPPORTED" json:"pre-authorized_grant_anonymous_access_supported,omitempty"`
 	} `mapstructure:"wellKnownAuth"`
 }
 

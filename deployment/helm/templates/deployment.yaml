@@ -98,6 +98,8 @@ spec:
               value: "none"
             - name: PREAUTHBRIDGE_WELLKNOWNAUTH_AUTHORIZATION_DETAILS_TYPES_SUPPORTED
               value: "openid_credential"
+            - name: PREAUTHBRIDGE_WELLKNOWNAUTH_PRE_AUTHORIZED_GRANT_ANONYMOUS_ACCESS_SUPPORTED
+              value: "true"
 
           {{- with .Values.resources }}
           resources:
