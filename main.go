@@ -26,6 +26,7 @@ func main() {
 	if err := envconfig.Process("PREAUTHBRIDGE", &config.CurrentPreAuthBridgeConfig); err != nil {
 		log.Fatalf("failed to load envconfig: %v", err)
 	}
+
 	conf := config.CurrentPreAuthBridgeConfig
 
 	ceConfig := ce.Config{Protocol: ce.ProtocolTypeNats, Settings: conf.Nats}

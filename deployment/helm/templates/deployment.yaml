@@ -92,10 +92,12 @@ spec:
               value: {{ .Values.server.http.port | quote }}
             - name: PREAUTHBRIDGE_OAUTH_SIGNER_TOPIC
               value: {{ .Values.config.oAuth.signerTopic | quote }}
-            - name: PREAUTHBRIDGE_GRANT_TYPES_SUPPORTED
+            - name: PREAUTHBRIDGE_WELLKNOWNAUTH_GRANT_TYPES_SUPPORTED
               value: "urn:ietf:params:oauth:grant-type:pre-authorized_code"
-            - name: PREAUTHBRIDGE_TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED
+            - name: PREAUTHBRIDGE_WELLKNOWNAUTH_TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED
               value: "none"
+            - name: PREAUTHBRIDGE_WELLKNOWNAUTH_AUTHORIZATION_DETAILS_TYPES_SUPPORTED
+              value: "openid_credential"
 
           {{- with .Values.resources }}
           resources:

@@ -45,10 +45,12 @@ type preAuthBridgeConfiguration struct {
 
 		ResponseTypesSupported []string `mapstructure:"response_types_supported" envconfig:"RESPONSE_TYPES_SUPPORTED" json:"response_types_supported,omitempty"`
 
-		TokenEndpointAuthMethodsSupported []string `mapstructure:"token_endpoint_auth_methods_supported" envconfig:"TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED" json:"token_endpoint_auth_methods_supported,omitempty"`
+		TokenEndpointAuthMethodsSupported []string `mapstructure:"token_endpoint_auth_methods_supported" envconfig:"TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED" json:"token_endpoint_auth_methods_supported"`
 
 		CodeChallengeMethodsSupported []string `mapstructure:"code_challenge_methods_supported" envconfig:"CODE_CHALLENGE_METHODS_SUPPORTED" json:"code_challenge_methods_supported,omitempty"`
-	} `mapstructure:"wellKnown"`
+
+		AuthorizationDetailsTypesSupported []string `mapstructure:"authorization_details_types_supported" envconfig:"AUTHORIZATION_DETAILS_TYPES_SUPPORTED" json:"authorization_details_types_supported,omitempty"`
+	} `mapstructure:"wellKnownAuth"`
 }
 
 var CurrentPreAuthBridgeConfig preAuthBridgeConfiguration
