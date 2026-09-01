@@ -43,7 +43,7 @@ type preAuthBridgeConfiguration struct {
 
 		GrantTypesSupported []string `mapstructure:"grant_types_supported" envconfig:"GRANT_TYPES_SUPPORTED" json:"grant_types_supported"`
 
-		ResponseTypesSupported []string `mapstructure:"response_types_supported" envconfig:"RESPONSE_TYPES_SUPPORTED" json:"response_types_supported"`
+		ResponseTypesSupported []string `mapstructure:"response_types_supported" envconfig:"RESPONSE_TYPES_SUPPORTED" json:"response_types_supported,omitempty"`
 
 		TokenEndpointAuthMethodsSupported []string `mapstructure:"token_endpoint_auth_methods_supported" envconfig:"TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED" json:"token_endpoint_auth_methods_supported,omitempty"`
 
