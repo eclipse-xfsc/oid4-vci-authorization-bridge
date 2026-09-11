@@ -23,7 +23,10 @@
                 "PREAUTHBRIDGE_OAUTH_GROUPID": "signer",
                 "PREAUTHBRIDGE_REDIS_PASSWORD": "dev-redis-password",
                 "PREAUTHBRIDGE_OAUTH_ISSUER_KID": "did:web:xxxx#eckey",
-                "PREAUTHBRIDGE_WELLKNOWN_JWKS": "http://..."
+                "PREAUTHBRIDGE_WELLKNOWN_JWKS": "http://...",
+                "PREAUTHBRIDGE_WELLKNOWNAUTH_GRANT_TYPES_SUPPORTED":"urn:ietf:params:oauth:grant-type:pre-authorized_code",
+                "PREAUTHBRIDGE_WELLKNOWNAUTH_TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED": "none",
+                "PREAUTHBRIDGE_WELLKNOWNAUTH_AUTHORIZATION_DETAILS_TYPES_SUPPORTED": "openid_credential"
             }
         }
     ]

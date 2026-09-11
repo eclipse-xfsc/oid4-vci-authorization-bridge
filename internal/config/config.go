@@ -36,6 +36,23 @@ type preAuthBridgeConfiguration struct {
 		GrantTypesSupported []string `mapstructure:"grant_types_supported" json:"grant_types_supported"`
 		Jwks                string   `envconfig:"JWKS" json:"jwks_uri"`
 	} `mapstructure:"wellKnown"`
+	WellKnownAuth struct {
+		Issuer        string `mapstructure:"issuer" json:"issuer"`
+		TokenEndpoint string `mapstructure:"token_endpoint" json:"token_endpoint"`
+		Jwks          string `envconfig:"JWKS" json:"jwks_uri"`
+
+		GrantTypesSupported []string `mapstructure:"grant_types_supported" envconfig:"GRANT_TYPES_SUPPORTED" json:"grant_types_supported"`
+
+		ResponseTypesSupported []string `mapstructure:"response_types_supported" envconfig:"RESPONSE_TYPES_SUPPORTED" json:"response_types_supported,omitempty"`
+
+		TokenEndpointAuthMethodsSupported []string `mapstructure:"token_endpoint_auth_methods_supported" envconfig:"TOKEN_ENDPOINT_AUTH_METHODS_SUPPORTED" json:"token_endpoint_auth_methods_supported"`
+
+		CodeChallengeMethodsSupported []string `mapstructure:"code_challenge_methods_supported" envconfig:"CODE_CHALLENGE_METHODS_SUPPORTED" json:"code_challenge_methods_supported,omitempty"`
+
+		AuthorizationDetailsTypesSupported []string `mapstructure:"authorization_details_types_supported" envconfig:"AUTHORIZATION_DETAILS_TYPES_SUPPORTED" json:"authorization_details_types_supported,omitempty"`
+
+		PreAuthorizedGrantAnonymousAccessSupported bool `mapstructure:"pre-authorized_grant_anonymous_access_supported" envconfig:"PRE_AUTHORIZED_GRANT_ANONYMOUS_ACCESS_SUPPORTED" json:"pre-authorized_grant_anonymous_access_supported,omitempty"`
+	} `mapstructure:"wellKnownAuth"`
 }
 
 var CurrentPreAuthBridgeConfig preAuthBridgeConfiguration
