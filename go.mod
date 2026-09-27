@@ -20,7 +20,7 @@ require (
 )
 
 require (
-	github.com/Azure/go-amqp v1.7.0 // indirect
+	github.com/Azure/go-amqp v0.17.0 // indirect
 	github.com/IBM/sarama v1.60.2 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
@@ -29,7 +29,7 @@ require (
 	github.com/bytedance/sonic/loader v0.5.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
-	github.com/cloudevents/sdk-go/protocol/amqp/v2 v2.16.2 // indirect
+	github.com/cloudevents/sdk-go/protocol/amqp/v2 v2.15.2 // indirect
 	github.com/cloudevents/sdk-go/protocol/kafka_sarama/v2 v2.16.2 // indirect
 	github.com/cloudevents/sdk-go/protocol/mqtt_paho/v2 v2.0.0-20260907034638-0d89252a1fa0 // indirect
 	github.com/cloudevents/sdk-go/protocol/nats/v2 v2.16.2 // indirect
